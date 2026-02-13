@@ -1,6 +1,7 @@
 package com.phorest.oteltest.assertions
 
 import io.opentelemetry.proto.trace.v1.Span
+import io.opentelemetry.proto.trace.v1.Span.Event
 import io.opentelemetry.proto.trace.v1.Status
 import java.time.Duration
 
@@ -91,6 +92,12 @@ class SpanAssert private constructor(private val span: Span) {
         }
     }
 
+    fun hasEvent(name: String, block: EventAssert.() -> Unit): SpanAssert = apply {
+        val event = span.eventsList.find { it.name == name }
+            ?: fail("Expected span [${span.name}] to have event [$name] but events were: ${span.eventsList.map { it.name }}")
+        EventAssert(event).apply(block)
+    }
+
     fun hasDurationGreaterThan(duration: Duration): SpanAssert = apply {
         val spanDurationNanos = span.endTimeUnixNano - span.startTimeUnixNano
         val expectedNanos = duration.toNanos()
@@ -119,6 +126,25 @@ private fun assert(condition: Boolean, message: () -> String) {
 private fun fail(message: String): Nothing = throw AssertionError(message)
 
 fun Span.assertThat(): SpanAssert = SpanAssert.assertThat(this)
+
+class EventAssert(private val event: Event) {
+
+    fun hasAttribute(key: String, value: String): EventAssert = apply {
+        val attr = event.attributesList.find { it.key == key }
+            ?: fail("Expected event [${event.name}] to have attribute [$key] but attributes were: ${event.attributesList.map { it.key }}")
+        assert(attr.value.stringValue == value) {
+            "Expected event attribute [$key] to be [$value] but was [${attr.value.stringValue}]"
+        }
+    }
+
+    fun hasAttributeContaining(key: String, substring: String): EventAssert = apply {
+        val attr = event.attributesList.find { it.key == key }
+            ?: fail("Expected event [${event.name}] to have attribute [$key] but attributes were: ${event.attributesList.map { it.key }}")
+        assert(attr.value.stringValue.contains(substring)) {
+            "Expected event attribute [$key] to contain [$substring] but was [${attr.value.stringValue}]"
+        }
+    }
+}
 
 private fun com.google.protobuf.ByteString.toHexString(): String =
     toByteArray().joinToString("") { "%02x".format(it) }

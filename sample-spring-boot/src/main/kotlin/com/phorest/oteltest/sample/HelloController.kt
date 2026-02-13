@@ -12,4 +12,7 @@ class HelloController(private val greetingService: GreetingService) {
 
     @GetMapping("/greet/{name}")
     fun greet(@PathVariable name: String): String = greetingService.greet(name)
+
+    @GetMapping("/fail")
+    fun fail(): String = throw IllegalStateException("Something went wrong")
 }

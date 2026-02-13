@@ -1,6 +1,7 @@
 package com.phorest.oteltest.dsl
 
 import com.phorest.oteltest.assertions.TraceAssert
+import com.phorest.oteltest.assertions.TraceTreeAssertBuilder
 import com.phorest.oteltest.collector.OtlpTestCollector
 import com.phorest.oteltest.model.TraceTree
 import com.phorest.oteltest.util.AwaitUtils
@@ -58,3 +59,7 @@ fun OtlpTestCollector.awaitTrace(
 }
 
 fun TraceTree.assertThat(): TraceAssert = TraceAssert.assertThat(this)
+
+fun TraceTree.assertThat(block: TraceTreeAssertBuilder.() -> Unit) {
+    TraceTreeAssertBuilder(this).apply(block)
+}

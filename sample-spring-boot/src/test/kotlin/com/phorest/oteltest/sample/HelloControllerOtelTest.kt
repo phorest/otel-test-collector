@@ -44,55 +44,35 @@ class HelloControllerOtelTest {
     }
 
     @Test
-    fun `captures full trace with custom service spans for greet endpoint`() {
+    fun `captures error span with exception event for failing endpoint`() {
+        restTemplate.getForEntity<String>("/fail")
+
+        collector.awaitSpanMatching {
+            withKind(Span.SpanKind.SPAN_KIND_SERVER)
+            withNameContaining("fail")
+        }.assertThat()
+            .hasKind(Span.SpanKind.SPAN_KIND_SERVER)
+            .hasStatusError()
+            .hasEvent("exception") {
+                hasAttribute("exception.type", "java.lang.IllegalStateException")
+                hasAttribute("exception.message", "Something went wrong")
+            }
+    }
+
+    @Test
+    fun `verifies full trace tree structure for greet endpoint`() {
         restTemplate.getForEntity<String>("/greet/Darek")
 
         collector.awaitTrace {
             containsSpanNamed("GreetingService.greet")
-        }.assertThat()
-            .hasSpanCount(3)
-            .hasRootSpan("GET /greet/{name}")
-            .spanWithName("GreetingService.buildGreeting")
-            .hasParent("GreetingService.greet")
-    }
-
-    @Test
-    fun `verifies trace tree structure for greet endpoint`() {
-        restTemplate.getForEntity<String>("/greet/Darek")
-
-        val trace = collector.awaitTrace {
-            containsSpanNamed("GreetingService.greet")
+        }.assertThat {
+            rootSpan("GET /greet/{name}") {
+                child("GreetingService.greet") {
+                    hasAttribute("greeting.name", "Darek")
+                    hasStatusOk()
+                    child("GreetingService.buildGreeting")
+                }
+            }
         }
-
-        assertEquals(3, trace.spanCount)
-        assertEquals(3, trace.depth)
-
-        val greetNode = trace.findSpan("GreetingService.greet")!!
-        assertEquals(1, greetNode.children.size)
-        assertEquals("GreetingService.buildGreeting", greetNode.children.first().name)
-    }
-
-    @Test
-    fun `verifies root span has expected children`() {
-        restTemplate.getForEntity<String>("/greet/Darek")
-
-        val trace = collector.awaitTrace {
-            containsSpanNamed("GreetingService.greet")
-        }
-
-        assertEquals(1, trace.rootSpan.children.size)
-        assertEquals("GreetingService.greet", trace.rootSpan.children.first().name)
-    }
-
-    @Test
-    fun `verifies custom attributes on greeting service span`() {
-        restTemplate.getForEntity<String>("/greet/Darek")
-
-        collector.awaitSpanMatching {
-            withName("GreetingService.greet")
-            withAttribute("greeting.name", "Darek")
-        }.assertThat()
-            .hasAttribute("greeting.name", "Darek")
-            .hasStatusOk()
     }
 }
