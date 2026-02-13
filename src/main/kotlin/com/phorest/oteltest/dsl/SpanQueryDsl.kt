@@ -5,6 +5,7 @@ import com.phorest.oteltest.util.AwaitUtils
 import io.opentelemetry.proto.trace.v1.Span
 import java.time.Duration
 
+@OtelTestDsl
 class SpanQueryBuilder {
     private val predicates = mutableListOf<(Span) -> Boolean>()
 

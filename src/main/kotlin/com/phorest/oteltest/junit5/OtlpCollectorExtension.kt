@@ -95,8 +95,10 @@ class OtlpCollectorExtension private constructor(
         private val NAMESPACE = ExtensionContext.Namespace.create(OtlpCollectorExtension::class.java)
         private const val SHARED_KEY = "sharedCollector"
 
+        @JvmStatic
         fun create(): OtlpCollectorExtension = Builder().build()
 
+        @JvmStatic
         fun builder(): Builder = Builder()
     }
 

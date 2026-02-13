@@ -48,6 +48,7 @@ class TraceAssert private constructor(private val trace: TraceTree) {
     }
 
     companion object {
+        @JvmStatic
         fun assertThat(trace: TraceTree): TraceAssert = TraceAssert(trace)
     }
 }

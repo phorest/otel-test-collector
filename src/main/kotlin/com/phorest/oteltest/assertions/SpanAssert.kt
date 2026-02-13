@@ -4,6 +4,7 @@ import io.opentelemetry.proto.trace.v1.Span
 import io.opentelemetry.proto.trace.v1.Span.Event
 import io.opentelemetry.proto.trace.v1.Status
 import java.time.Duration
+import java.util.function.Consumer
 
 class SpanAssert private constructor(private val span: Span) {
 
@@ -92,10 +93,17 @@ class SpanAssert private constructor(private val span: Span) {
         }
     }
 
+    @JvmSynthetic
     fun hasEvent(name: String, block: EventAssert.() -> Unit): SpanAssert = apply {
         val event = span.eventsList.find { it.name == name }
             ?: fail("Expected span [${span.name}] to have event [$name] but events were: ${span.eventsList.map { it.name }}")
         EventAssert(event).apply(block)
+    }
+
+    fun hasEvent(name: String, block: Consumer<EventAssert>): SpanAssert = apply {
+        val event = span.eventsList.find { it.name == name }
+            ?: fail("Expected span [${span.name}] to have event [$name] but events were: ${span.eventsList.map { it.name }}")
+        block.accept(EventAssert(event))
     }
 
     fun hasDurationGreaterThan(duration: Duration): SpanAssert = apply {
@@ -115,6 +123,7 @@ class SpanAssert private constructor(private val span: Span) {
     }
 
     companion object {
+        @JvmStatic
         fun assertThat(span: Span): SpanAssert = SpanAssert(span)
     }
 }

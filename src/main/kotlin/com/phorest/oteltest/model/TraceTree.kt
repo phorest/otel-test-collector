@@ -63,6 +63,7 @@ class TraceTree(
     }
 
     companion object {
+        @JvmStatic
         fun buildFrom(spans: List<Span>): TraceTree {
             require(spans.isNotEmpty()) { "Cannot build trace from empty span list" }
 

@@ -1,13 +1,13 @@
 package com.phorest.oteltest.dsl
 
 import com.phorest.oteltest.assertions.TraceAssert
-import com.phorest.oteltest.assertions.TraceTreeAssertBuilder
 import com.phorest.oteltest.collector.OtlpTestCollector
 import com.phorest.oteltest.model.TraceTree
 import com.phorest.oteltest.util.AwaitUtils
 import com.phorest.oteltest.util.traceIdHex
 import java.time.Duration
 
+@OtelTestDsl
 class TraceQueryBuilder {
     private val predicates = mutableListOf<(TraceTree) -> Boolean>()
 

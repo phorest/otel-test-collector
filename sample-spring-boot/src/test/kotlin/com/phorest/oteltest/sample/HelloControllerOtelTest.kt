@@ -1,6 +1,5 @@
 package com.phorest.oteltest.sample
 
-import com.phorest.oteltest.assertions.assertThat
 import com.phorest.oteltest.dsl.assertThat
 import com.phorest.oteltest.junit5.OtlpCollectorExtension
 import com.phorest.oteltest.junit5.awaitSpanMatching
@@ -39,8 +38,9 @@ class HelloControllerOtelTest {
         collector.awaitSpanMatching {
             withKind(Span.SpanKind.SPAN_KIND_SERVER)
             withNameContaining("hello")
-        }.assertThat()
-            .hasKind(Span.SpanKind.SPAN_KIND_SERVER)
+        }.assertThat {
+            hasKind(Span.SpanKind.SPAN_KIND_SERVER)
+        }
     }
 
     @Test
@@ -50,13 +50,14 @@ class HelloControllerOtelTest {
         collector.awaitSpanMatching {
             withKind(Span.SpanKind.SPAN_KIND_SERVER)
             withNameContaining("fail")
-        }.assertThat()
-            .hasKind(Span.SpanKind.SPAN_KIND_SERVER)
-            .hasStatusError()
-            .hasEvent("exception") {
+        }.assertThat {
+            hasKind(Span.SpanKind.SPAN_KIND_SERVER)
+            hasStatusError()
+            hasEvent("exception") {
                 hasAttribute("exception.type", "java.lang.IllegalStateException")
                 hasAttribute("exception.message", "Something went wrong")
             }
+        }
     }
 
     @Test

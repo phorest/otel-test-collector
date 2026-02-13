@@ -52,8 +52,10 @@ class OtlpTestCollector private constructor(
     companion object {
         private const val DEFAULT_PORT = 4318
 
+        @JvmStatic
         fun create(): OtlpTestCollector = OtlpTestCollector(DEFAULT_PORT)
 
+        @JvmStatic
         fun builder(): Builder = Builder()
     }
 

@@ -1,0 +1,99 @@
+package com.phorest.oteltest.sample;
+
+import com.phorest.oteltest.assertions.SpanAssert;
+import com.phorest.oteltest.assertions.TraceAssert;
+import com.phorest.oteltest.junit5.OtlpCollectorExtension;
+import com.phorest.oteltest.model.TraceTree;
+import io.opentelemetry.proto.trace.v1.Span;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class HelloControllerOtelTest {
+
+    @RegisterExtension
+    static OtlpCollectorExtension collector = OtlpCollectorExtension.builder()
+            .port(4318)
+            .resetBeforeEach(true)
+            .build();
+
+    @Autowired
+    TestRestTemplate restTemplate;
+
+    @Test
+    void capturesHttpServerSpanForGetHello() {
+        var response = restTemplate.getForEntity("/hello", String.class);
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("Hello, World!", response.getBody());
+
+        var serverSpan = collector.awaitSpan(span ->
+                span.getKind() == Span.SpanKind.SPAN_KIND_SERVER && span.getName().contains("hello")
+        );
+
+        SpanAssert.assertThat(serverSpan)
+                .hasKind(Span.SpanKind.SPAN_KIND_SERVER);
+    }
+
+    @Test
+    void capturesErrorSpanWithExceptionEvent() {
+        restTemplate.getForEntity("/fail", String.class);
+
+        var errorSpan = collector.awaitSpan(span ->
+                span.getKind() == Span.SpanKind.SPAN_KIND_SERVER && span.getName().contains("fail")
+        );
+
+        SpanAssert.assertThat(errorSpan)
+                .hasKind(Span.SpanKind.SPAN_KIND_SERVER)
+                .hasStatusError()
+                .hasEvent("exception", event -> {
+                    event.hasAttribute("exception.type", "java.lang.IllegalStateException");
+                    event.hasAttribute("exception.message", "Something went wrong");
+                });
+    }
+
+    @Test
+    void verifiesTraceStructureForGreetEndpoint() {
+        restTemplate.getForEntity("/greet/Darek", String.class);
+
+        var greetSpan = collector.awaitSpan(span ->
+                span.getName().equals("GreetingService.greet")
+        );
+
+        var spans = collector.getCollector().spansByTraceId(
+                toHex(greetSpan.getTraceId().toByteArray())
+        );
+        var trace = TraceTree.buildFrom(spans);
+
+        TraceAssert.assertThat(trace)
+                .hasSpanCount(3)
+                .hasRootSpan("GET /greet/{name}")
+                .spanWithName("GreetingService.buildGreeting")
+                .hasParent("GreetingService.greet");
+    }
+
+    @Test
+    void verifiesCustomAttributesOnGreetingSpan() {
+        restTemplate.getForEntity("/greet/Darek", String.class);
+
+        var greetSpan = collector.awaitSpan(span ->
+                span.getName().equals("GreetingService.greet")
+        );
+
+        SpanAssert.assertThat(greetSpan)
+                .hasAttribute("greeting.name", "Darek")
+                .hasStatusOk();
+    }
+
+    private static String toHex(byte[] bytes) {
+        var sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+}
