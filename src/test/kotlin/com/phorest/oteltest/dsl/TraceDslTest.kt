@@ -115,7 +115,7 @@ class TraceDslTest {
     fun `awaitTrace waits for matching trace`() {
         traceBuilder.sendTrace(collector.getPort(), traceId = 1, "GET /api" to null, "DB query" to "GET /api")
 
-        val trace = collector.awaitTrace {
+        val trace = collector.awaitTraceMatching {
             containsSpanNamed("DB query")
         }
         assertEquals(2, trace.spanCount)

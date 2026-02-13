@@ -1,5 +1,7 @@
 package com.phorest.oteltest.collector
 
+import com.phorest.oteltest.model.TraceTree
+import com.phorest.oteltest.util.traceIdHex
 import io.opentelemetry.proto.trace.v1.Span
 import java.time.Duration
 
@@ -48,6 +50,11 @@ class OtlpTestCollector private constructor(
     fun spansByAttribute(key: String, value: String): List<Span> = spanStore.byAttribute(key, value)
 
     fun spansByTraceId(traceId: String): List<Span> = spanStore.byTraceId(traceId)
+
+    fun traces(): List<TraceTree> =
+        getSpans()
+            .groupBy { it.traceIdHex }
+            .map { (_, spans) -> TraceTree.buildFrom(spans) }
 
     companion object {
         private const val DEFAULT_PORT = 4318

@@ -1,6 +1,8 @@
 package com.phorest.oteltest.junit5
 
 import com.phorest.oteltest.collector.OtlpTestCollector
+import com.phorest.oteltest.model.TraceTree
+import com.phorest.oteltest.util.AwaitUtils
 import io.opentelemetry.proto.trace.v1.Span
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
@@ -88,6 +90,13 @@ class OtlpCollectorExtension private constructor(
 
     fun awaitSpan(predicate: (Span) -> Boolean): Span =
         ensureStarted().awaitSpan(awaitTimeout, predicate)
+
+    fun traces(): List<TraceTree> = ensureStarted().traces()
+
+    fun awaitTrace(predicate: (TraceTree) -> Boolean): TraceTree =
+        AwaitUtils.awaitUntilNotNull(timeout = awaitTimeout) {
+            ensureStarted().traces().firstOrNull(predicate)
+        }
 
     fun reset() = ensureStarted().reset()
 

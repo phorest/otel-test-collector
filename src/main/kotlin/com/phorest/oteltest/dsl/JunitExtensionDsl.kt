@@ -1,12 +1,7 @@
-package com.phorest.oteltest.junit5
+package com.phorest.oteltest.dsl
 
-import com.phorest.oteltest.dsl.SpanQueryBuilder
-import com.phorest.oteltest.dsl.SpanQueryResult
-import com.phorest.oteltest.dsl.TraceQueryBuilder
+import com.phorest.oteltest.junit5.OtlpCollectorExtension
 import com.phorest.oteltest.model.TraceTree
-import com.phorest.oteltest.dsl.awaitSpanMatching
-import com.phorest.oteltest.dsl.awaitTrace
-import com.phorest.oteltest.dsl.spans
 import io.opentelemetry.proto.trace.v1.Span
 import java.time.Duration
 
@@ -18,7 +13,7 @@ fun OtlpCollectorExtension.awaitSpanMatching(
     block: SpanQueryBuilder.() -> Unit
 ): Span = getCollector().awaitSpanMatching(timeout, block)
 
-fun OtlpCollectorExtension.awaitTrace(
+fun OtlpCollectorExtension.awaitTraceMatching(
     timeout: Duration = Duration.ofSeconds(10),
     block: TraceQueryBuilder.() -> Unit
-): TraceTree = getCollector().awaitTrace(timeout, block)
+): TraceTree = getCollector().awaitTraceMatching(timeout, block)

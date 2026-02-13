@@ -3,7 +3,6 @@ package com.phorest.oteltest.dsl
 import com.phorest.oteltest.collector.OtlpTestCollector
 import com.phorest.oteltest.model.TraceTree
 import com.phorest.oteltest.util.AwaitUtils
-import com.phorest.oteltest.util.traceIdHex
 import java.time.Duration
 
 @OtelTestDsl
@@ -25,11 +24,6 @@ class TraceQueryBuilder {
     internal fun matches(trace: TraceTree): Boolean = predicates.all { it(trace) }
 }
 
-fun OtlpTestCollector.traces(): List<TraceTree> =
-    getSpans()
-        .groupBy { it.traceIdHex }
-        .map { (_, spans) -> TraceTree.buildFrom(spans) }
-
 fun OtlpTestCollector.findTrace(block: TraceQueryBuilder.() -> Unit): TraceTree {
     val builder = TraceQueryBuilder().apply(block)
     val matching = traces().filter { builder.matches(it) }
@@ -47,7 +41,7 @@ fun OtlpTestCollector.findTraces(block: TraceQueryBuilder.() -> Unit): List<Trac
     return traces().filter { builder.matches(it) }
 }
 
-fun OtlpTestCollector.awaitTrace(
+fun OtlpTestCollector.awaitTraceMatching(
     timeout: Duration = Duration.ofSeconds(10),
     block: TraceQueryBuilder.() -> Unit
 ): TraceTree {

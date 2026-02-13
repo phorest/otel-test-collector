@@ -3,7 +3,6 @@ package com.phorest.oteltest.sample;
 import com.phorest.oteltest.assertions.SpanAssert;
 import com.phorest.oteltest.assertions.TraceAssert;
 import com.phorest.oteltest.junit5.OtlpCollectorExtension;
-import com.phorest.oteltest.model.TraceTree;
 import io.opentelemetry.proto.trace.v1.Span;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -60,14 +59,9 @@ class HelloControllerOtelTest {
     void verifiesTraceStructureForGreetEndpoint() {
         restTemplate.getForEntity("/greet/Darek", String.class);
 
-        var greetSpan = collector.awaitSpan(span ->
-                span.getName().equals("GreetingService.greet")
+        var trace = collector.awaitTrace(t ->
+                t.spanNames().contains("GreetingService.greet")
         );
-
-        var spans = collector.getCollector().spansByTraceId(
-                toHex(greetSpan.getTraceId().toByteArray())
-        );
-        var trace = TraceTree.buildFrom(spans);
 
         TraceAssert.assertThat(trace)
                 .hasSpanCount(3)
@@ -89,11 +83,4 @@ class HelloControllerOtelTest {
                 .hasStatusOk();
     }
 
-    private static String toHex(byte[] bytes) {
-        var sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
-    }
 }

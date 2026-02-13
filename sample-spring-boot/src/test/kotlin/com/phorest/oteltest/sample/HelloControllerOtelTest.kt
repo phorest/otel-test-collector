@@ -2,8 +2,8 @@ package com.phorest.oteltest.sample
 
 import com.phorest.oteltest.dsl.assertThat
 import com.phorest.oteltest.junit5.OtlpCollectorExtension
-import com.phorest.oteltest.junit5.awaitSpanMatching
-import com.phorest.oteltest.junit5.awaitTrace
+import com.phorest.oteltest.dsl.awaitSpanMatching
+import com.phorest.oteltest.dsl.awaitTraceMatching
 import io.opentelemetry.proto.trace.v1.Span
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -64,7 +64,7 @@ class HelloControllerOtelTest {
     fun `verifies full trace tree structure for greet endpoint`() {
         restTemplate.getForEntity<String>("/greet/Darek")
 
-        collector.awaitTrace {
+        collector.awaitTraceMatching {
             containsSpanNamed("GreetingService.greet")
         }.assertThat {
             rootSpan("GET /greet/{name}") {
