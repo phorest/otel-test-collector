@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.3.10"
+    `java-library`
     `maven-publish`
 }
 
@@ -32,7 +33,7 @@ dependencies {
     // Core
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
-    implementation("io.opentelemetry.proto:opentelemetry-proto:$otelProtoVersion")
+    api("io.opentelemetry.proto:opentelemetry-proto:$otelProtoVersion")
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
 
     // JUnit 5 - compileOnly so users provide their own

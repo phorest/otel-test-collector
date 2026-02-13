@@ -118,5 +118,7 @@ private fun assert(condition: Boolean, message: () -> String) {
 
 private fun fail(message: String): Nothing = throw AssertionError(message)
 
+fun Span.assertThat(): SpanAssert = SpanAssert.assertThat(this)
+
 private fun com.google.protobuf.ByteString.toHexString(): String =
     toByteArray().joinToString("") { "%02x".format(it) }
