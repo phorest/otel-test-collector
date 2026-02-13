@@ -2,6 +2,7 @@ package com.phorest.oteltest.dsl
 
 import com.google.protobuf.ByteString
 import com.phorest.oteltest.TraceBuilder
+import com.phorest.oteltest.model.TraceTree
 import io.opentelemetry.proto.trace.v1.Span
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -19,7 +20,6 @@ class TraceTreeTest {
         val tree = TraceTree.buildFrom(spans)
 
         assertEquals(3, tree.spanCount)
-        assertEquals(1, tree.roots.size)
         assertEquals("root", tree.rootSpan.name)
     }
 
@@ -32,12 +32,11 @@ class TraceTreeTest {
     }
 
     @Test
-    fun `rootSpan throws when multiple roots`() {
+    fun `buildFrom throws when multiple roots`() {
         val spans = traceBuilder.buildTrace("root1" to null, "root2" to null)
-        val tree = TraceTree.buildFrom(spans)
 
         assertThrows<IllegalStateException> {
-            tree.rootSpan
+            TraceTree.buildFrom(spans)
         }
     }
 
@@ -170,7 +169,6 @@ class TraceTreeTest {
         )
 
         val tree = TraceTree.buildFrom(spans)
-        assertEquals(1, tree.roots.size)
         assertEquals("orphan", tree.rootSpan.name)
     }
 }

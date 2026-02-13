@@ -1,48 +1,39 @@
 package com.phorest.oteltest.assertions
 
+import com.google.protobuf.ByteString
+import com.phorest.oteltest.model.TraceTree
 import io.opentelemetry.proto.trace.v1.Span
 
-class TraceAssert private constructor(private val spans: List<Span>) {
-
-    private val spansByParentId: Map<String, List<Span>> by lazy {
-        spans.groupBy { it.parentSpanId.toHexString() }
-    }
+class TraceAssert private constructor(private val trace: TraceTree) {
 
     fun hasSpanCount(expected: Int): TraceAssert = apply {
-        assert(spans.size == expected) {
-            "Expected trace to have [$expected] spans but had [${spans.size}]"
+        assert(trace.spanCount == expected) {
+            "Expected trace to have [$expected] spans but had [${trace.spanCount}]"
         }
     }
 
     fun hasRootSpan(name: String): TraceAssert = apply {
-        val roots = spans.filter { it.parentSpanId.isEmpty }
-        assert(roots.any { it.name == name }) {
-            val rootNames = roots.map { it.name }
-            "Expected root span named [$name] but root spans were: $rootNames"
+        assert(trace.rootSpan.name == name) {
+            "Expected root span named [$name] but was [${trace.rootSpan.name}]"
         }
     }
 
     fun hasDepth(expected: Int): TraceAssert = apply {
-        val roots = spans.filter { it.parentSpanId.isEmpty }
-        assert(roots.isNotEmpty()) {
-            "Cannot compute depth: no root spans found in trace"
-        }
-        val actual = roots.maxOf { computeDepth(it) }
-        assert(actual == expected) {
-            "Expected trace depth to be [$expected] but was [$actual]"
+        assert(trace.depth == expected) {
+            "Expected trace depth to be [$expected] but was [${trace.depth}]"
         }
     }
 
     fun spanWithName(name: String): SpanInTraceAssert {
-        val span = spans.find { it.name == name }
+        val node = trace.findSpan(name)
             ?: throw AssertionError(
-                "Expected span with name [$name] in trace but found: ${spans.map { it.name }}"
+                "Expected span with name [$name] in trace but found: ${trace.spanNames()}"
             )
-        return SpanInTraceAssert(span, spans)
+        return SpanInTraceAssert(node.span, trace.allSpans)
     }
 
     fun spansAreOrdered(vararg names: String): TraceAssert = apply {
-        val spanNames = spans.map { it.name }
+        val spanNames = trace.spanNames()
         val indices = names.map { name ->
             val index = spanNames.indexOf(name)
             assert(index >= 0) {
@@ -56,13 +47,8 @@ class TraceAssert private constructor(private val spans: List<Span>) {
         }
     }
 
-    private fun computeDepth(span: Span): Int {
-        val children = spansByParentId[span.spanId.toHexString()] ?: return 1
-        return 1 + (children.maxOfOrNull { computeDepth(it) } ?: 0)
-    }
-
     companion object {
-        fun assertThat(spans: List<Span>): TraceAssert = TraceAssert(spans)
+        fun assertThat(trace: TraceTree): TraceAssert = TraceAssert(trace)
     }
 }
 
@@ -90,11 +76,13 @@ class SpanInTraceAssert(private val span: Span, private val allSpans: List<Span>
     }
 }
 
-fun List<Span>.asTrace(): TraceAssert = TraceAssert.assertThat(this)
+fun TraceTree.asTraceAssert(): TraceAssert = TraceAssert.assertThat(this)
+
+fun List<Span>.asTrace(): TraceAssert = TraceAssert.assertThat(TraceTree.buildFrom(this))
 
 private fun assert(condition: Boolean, message: () -> String) {
     if (!condition) throw AssertionError(message())
 }
 
-private fun com.google.protobuf.ByteString.toHexString(): String =
+private fun ByteString.toHexString(): String =
     toByteArray().joinToString("") { "%02x".format(it) }

@@ -27,6 +27,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("io.opentelemetry:opentelemetry-api:1.47.0")
 
     otelAgent("io.opentelemetry.javaagent:opentelemetry-javaagent:$otelAgentVersion")
 
@@ -65,6 +66,10 @@ tasks.test {
     // Export spans quickly so tests don't wait on the default 5s batch delay
     environment("OTEL_BSP_SCHEDULE_DELAY", "100")
     environment("OTEL_BSP_MAX_EXPORT_BATCH_SIZE", "1")
+
+    // Disable context propagation so TestRestTemplate doesn't inject trace headers
+    // into requests — server spans remain independent roots
+    environment("OTEL_PROPAGATORS", "none")
 
     // Suppress expected connection errors during shutdown when collector is already stopped
     systemProperty("otel.javaagent.logging", "simple")

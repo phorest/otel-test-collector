@@ -1,4 +1,4 @@
-package com.phorest.oteltest.dsl
+package com.phorest.oteltest.model
 
 import com.phorest.oteltest.util.spanIdHex
 import com.phorest.oteltest.util.parentSpanIdHex
@@ -46,35 +46,20 @@ class SpanNode(
 
 class TraceTree(
     val traceId: String,
-    val roots: List<SpanNode>,
+    val rootSpan: SpanNode,
     val allSpans: List<Span>
 ) {
-    val rootSpan: SpanNode
-        get() {
-            check(roots.size == 1) {
-                "Expected single root span but found ${roots.size}: ${roots.map { it.name }}"
-            }
-            return roots.first()
-        }
-
     val spanCount: Int get() = allSpans.size
 
-    val depth: Int
-        get() = roots.maxOfOrNull { it.depth } ?: 0
+    val depth: Int get() = rootSpan.depth
 
-    fun findSpan(name: String): SpanNode? {
-        for (root in roots) {
-            val found = root.findDescendant(name)
-            if (found != null) return found
-        }
-        return null
-    }
+    fun findSpan(name: String): SpanNode? = rootSpan.findDescendant(name)
 
     fun spanNames(): List<String> = allSpans.map { it.name }
 
     override fun toString(): String = buildString {
         appendLine("Trace [$traceId] (${allSpans.size} spans, depth $depth)")
-        roots.forEach { append(it) }
+        append(rootSpan)
     }
 
     companion object {
@@ -94,7 +79,11 @@ class TraceTree(
                 .filter { it.parentSpanId.isEmpty || spanById[it.parentSpanIdHex] == null }
                 .map { buildNode(it) }
 
-            return TraceTree(traceId, roots, spans)
+            check(roots.size == 1) {
+                "Expected single root span but found ${roots.size}: ${roots.map { it.name }}"
+            }
+
+            return TraceTree(traceId, roots.single(), spans)
         }
     }
 }
