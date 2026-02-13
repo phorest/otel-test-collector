@@ -1,8 +1,8 @@
 package com.phorest.oteltest.assertions
 
 import com.google.protobuf.ByteString
-import io.opentelemetry.proto.common.v1.AnyValue
-import io.opentelemetry.proto.common.v1.KeyValue
+import com.phorest.oteltest.TestFixtures.attr
+import com.phorest.oteltest.TestFixtures.span
 import io.opentelemetry.proto.trace.v1.Span
 import io.opentelemetry.proto.trace.v1.Status
 import org.junit.jupiter.api.Test
@@ -13,14 +13,14 @@ class SpanAssertTest {
 
     @Test
     fun `hasName passes for matching name`() {
-        SpanAssert.assertThat(span(name = "GET /api"))
+        SpanAssert.assertThat(span("GET /api"))
             .hasName("GET /api")
     }
 
     @Test
     fun `hasName fails with descriptive message`() {
         val error = assertThrows<AssertionError> {
-            SpanAssert.assertThat(span(name = "POST /api"))
+            SpanAssert.assertThat(span("POST /api"))
                 .hasName("GET /api")
         }
         assert(error.message!!.contains("GET /api"))
@@ -29,14 +29,14 @@ class SpanAssertTest {
 
     @Test
     fun `hasNameMatching passes for matching regex`() {
-        SpanAssert.assertThat(span(name = "GET /api/users/123"))
+        SpanAssert.assertThat(span("GET /api/users/123"))
             .hasNameMatching(Regex("GET /api/users/\\d+"))
     }
 
     @Test
     fun `hasNameMatching fails for non-matching regex`() {
         assertThrows<AssertionError> {
-            SpanAssert.assertThat(span(name = "POST /api"))
+            SpanAssert.assertThat(span("POST /api"))
                 .hasNameMatching(Regex("GET .*"))
         }
     }
@@ -78,7 +78,7 @@ class SpanAssertTest {
     @Test
     fun `hasAttribute fails when attribute missing`() {
         val error = assertThrows<AssertionError> {
-            SpanAssert.assertThat(span(name = "test"))
+            SpanAssert.assertThat(span("test"))
                 .hasAttribute("http.method", "GET")
         }
         assert(error.message!!.contains("http.method"))
@@ -123,7 +123,7 @@ class SpanAssertTest {
 
     @Test
     fun `hasNoParent passes for root span`() {
-        SpanAssert.assertThat(span(name = "root")).hasNoParent()
+        SpanAssert.assertThat(span("root")).hasNoParent()
     }
 
     @Test
@@ -195,7 +195,7 @@ class SpanAssertTest {
     @Test
     fun `hasEvent fails with descriptive message when event missing`() {
         val error = assertThrows<AssertionError> {
-            SpanAssert.assertThat(span(name = "test")).hasEvent("exception")
+            SpanAssert.assertThat(span("test")).hasEvent("exception")
         }
         assert(error.message!!.contains("exception"))
     }
@@ -237,14 +237,4 @@ class SpanAssertTest {
             .hasAttribute("http.method", "GET")
             .hasStatusOk()
     }
-
-    // -- helpers --
-
-    private fun span(name: String): Span = Span.newBuilder().setName(name).build()
-
-    private fun attr(key: String, value: String): KeyValue =
-        KeyValue.newBuilder()
-            .setKey(key)
-            .setValue(AnyValue.newBuilder().setStringValue(value))
-            .build()
 }

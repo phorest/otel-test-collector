@@ -1,0 +1,100 @@
+package com.phorest.oteltest.dsl
+
+import com.phorest.oteltest.util.spanIdHex
+import com.phorest.oteltest.util.parentSpanIdHex
+import com.phorest.oteltest.util.traceIdHex
+import io.opentelemetry.proto.trace.v1.Span
+
+class SpanNode(
+    val span: Span,
+    val children: List<SpanNode>
+) {
+    val name: String get() = span.name
+    val spanIdHex: String get() = span.spanIdHex
+    val parentSpanIdHex: String get() = span.parentSpanIdHex
+
+    val depth: Int
+        get() = 1 + (children.maxOfOrNull { it.depth } ?: 0)
+
+    fun findChild(name: String): SpanNode? =
+        children.find { it.name == name }
+
+    fun findDescendant(name: String): SpanNode? {
+        if (this.name == name) return this
+        for (child in children) {
+            val found = child.findDescendant(name)
+            if (found != null) return found
+        }
+        return null
+    }
+
+    fun allDescendants(): List<SpanNode> =
+        children + children.flatMap { it.allDescendants() }
+
+    override fun toString(): String = buildString {
+        appendTree(this@SpanNode, indent = 0)
+    }
+
+    private fun StringBuilder.appendTree(node: SpanNode, indent: Int) {
+        append("  ".repeat(indent))
+        append(node.name)
+        append(" [${node.spanIdHex.take(8)}]")
+        appendLine()
+        node.children.forEach { appendTree(it, indent + 1) }
+    }
+}
+
+class TraceTree(
+    val traceId: String,
+    val roots: List<SpanNode>,
+    val allSpans: List<Span>
+) {
+    val rootSpan: SpanNode
+        get() {
+            check(roots.size == 1) {
+                "Expected single root span but found ${roots.size}: ${roots.map { it.name }}"
+            }
+            return roots.first()
+        }
+
+    val spanCount: Int get() = allSpans.size
+
+    val depth: Int
+        get() = roots.maxOfOrNull { it.depth } ?: 0
+
+    fun findSpan(name: String): SpanNode? {
+        for (root in roots) {
+            val found = root.findDescendant(name)
+            if (found != null) return found
+        }
+        return null
+    }
+
+    fun spanNames(): List<String> = allSpans.map { it.name }
+
+    override fun toString(): String = buildString {
+        appendLine("Trace [$traceId] (${allSpans.size} spans, depth $depth)")
+        roots.forEach { append(it) }
+    }
+
+    companion object {
+        fun buildFrom(spans: List<Span>): TraceTree {
+            require(spans.isNotEmpty()) { "Cannot build trace from empty span list" }
+
+            val traceId = spans.first().traceIdHex
+            val byParentId = spans.groupBy { it.parentSpanIdHex }
+            val spanById = spans.associateBy { it.spanIdHex }
+
+            fun buildNode(span: Span): SpanNode {
+                val childSpans = byParentId[span.spanIdHex] ?: emptyList()
+                return SpanNode(span, childSpans.map { buildNode(it) })
+            }
+
+            val roots = spans
+                .filter { it.parentSpanId.isEmpty || spanById[it.parentSpanIdHex] == null }
+                .map { buildNode(it) }
+
+            return TraceTree(traceId, roots, spans)
+        }
+    }
+}

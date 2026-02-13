@@ -1,18 +1,13 @@
 package com.phorest.oteltest.collector
 
-import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest
-import io.opentelemetry.proto.common.v1.AnyValue
-import io.opentelemetry.proto.common.v1.KeyValue
-import io.opentelemetry.proto.trace.v1.ResourceSpans
-import io.opentelemetry.proto.trace.v1.ScopeSpans
+import com.phorest.oteltest.TestFixtures.attr
+import com.phorest.oteltest.TestFixtures.sendSpans
 import io.opentelemetry.proto.trace.v1.Span
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.net.HttpURLConnection
-import java.net.URI
 import java.time.Duration
 
 class OtlpTestCollectorTest {
@@ -192,42 +187,4 @@ class OtlpTestCollectorTest {
             sendSpans(port, "after-close")
         }
     }
-
-    // -- helpers --
-
-    private fun sendSpans(port: Int, vararg names: String) {
-        val spans = names.map { Span.newBuilder().setName(it).build() }
-        sendSpans(port, *spans.toTypedArray())
-    }
-
-    private fun sendSpans(port: Int, vararg spans: Span) {
-        val request = ExportTraceServiceRequest.newBuilder()
-            .addResourceSpans(
-                ResourceSpans.newBuilder()
-                    .addScopeSpans(
-                        ScopeSpans.newBuilder().apply {
-                            spans.forEach { addSpans(it) }
-                        }
-                    )
-            )
-            .build()
-
-        val url = URI("http://localhost:$port/v1/traces").toURL()
-        val connection = url.openConnection() as HttpURLConnection
-        try {
-            connection.requestMethod = "POST"
-            connection.doOutput = true
-            connection.setRequestProperty("Content-Type", "application/x-protobuf")
-            connection.outputStream.use { it.write(request.toByteArray()) }
-            connection.responseCode // trigger the request
-        } finally {
-            connection.disconnect()
-        }
-    }
-
-    private fun attr(key: String, value: String): KeyValue =
-        KeyValue.newBuilder()
-            .setKey(key)
-            .setValue(AnyValue.newBuilder().setStringValue(value))
-            .build()
 }
