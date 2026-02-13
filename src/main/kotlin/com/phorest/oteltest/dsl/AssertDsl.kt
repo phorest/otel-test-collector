@@ -2,6 +2,7 @@ package com.phorest.oteltest.dsl
 
 import com.phorest.oteltest.assertions.EventAssert
 import com.phorest.oteltest.assertions.SpanAssert
+import com.phorest.oteltest.assertions.TraceAssert
 import com.phorest.oteltest.model.SpanNode
 import com.phorest.oteltest.model.TraceTree
 import io.opentelemetry.proto.trace.v1.Span
@@ -54,4 +55,10 @@ class TraceTreeAssertBuilder(private val trace: TraceTree) {
 
 fun Span.assertThat(block: SpanNodeAssert.() -> Unit) {
     SpanNodeAssert(SpanNode(this, emptyList())).apply(block)
+}
+
+fun TraceTree.assertThat(): TraceAssert = TraceAssert.assertThat(this)
+
+fun TraceTree.assertThat(block: TraceTreeAssertBuilder.() -> Unit) {
+    TraceTreeAssertBuilder(this).apply(block)
 }
