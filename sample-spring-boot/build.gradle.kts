@@ -61,4 +61,12 @@ tasks.test {
     environment("OTEL_TRACES_EXPORTER", "otlp")
     environment("OTEL_METRICS_EXPORTER", "none")
     environment("OTEL_LOGS_EXPORTER", "none")
+
+    // Export spans quickly so tests don't wait on the default 5s batch delay
+    environment("OTEL_BSP_SCHEDULE_DELAY", "100")
+    environment("OTEL_BSP_MAX_EXPORT_BATCH_SIZE", "1")
+
+    // Suppress expected connection errors during shutdown when collector is already stopped
+    systemProperty("otel.javaagent.logging", "simple")
+    systemProperty("io.opentelemetry.javaagent.slf4j.simpleLogger.log.io.opentelemetry.exporter.internal.http.HttpExporter", "off")
 }
