@@ -213,5 +213,62 @@ class TraceQueryDslTest {
                 }
             }
         }
+
+        @Test
+        fun `anySpan finds span nested deep in tree`() {
+            buildTree(
+                "root" to null,
+                "child" to "root",
+                "grandchild" to "child"
+            ).assertThat {
+                anySpan("grandchild")
+            }
+        }
+
+        @Test
+        fun `anySpan fails when no span matches name`() {
+            val error = assertThrows<AssertionError> {
+                buildTree("root" to null, "child" to "root").assertThat {
+                    anySpan("missing")
+                }
+            }
+            assert(error.message!!.contains("missing"))
+        }
+
+        @Test
+        fun `anySpan allows assertions on found span`() {
+            val spans = traceBuilder.buildTrace(listOf(
+                spanDef("root", null),
+                spanDef("child", "root"),
+                spanDef("DB query", "child", "db.table" to "users")
+            ))
+
+            TraceTree.buildFrom(spans).assertThat {
+                anySpan("DB query") {
+                    hasAttribute("db.table", "users")
+                }
+            }
+        }
+
+        @Test
+        fun `anySpan with predicate finds matching span`() {
+            buildTree(
+                "root" to null,
+                "child" to "root",
+                "DB query" to "child"
+            ).assertThat {
+                anySpan({ it.name.startsWith("DB") })
+            }
+        }
+
+        @Test
+        fun `anySpan with predicate fails when no span matches`() {
+            val error = assertThrows<AssertionError> {
+                buildTree("root" to null).assertThat {
+                    anySpan({ it.name == "nope" })
+                }
+            }
+            assert(error.message!!.contains("No span matching predicate"))
+        }
     }
 }

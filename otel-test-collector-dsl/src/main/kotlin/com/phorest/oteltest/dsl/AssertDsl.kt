@@ -86,6 +86,23 @@ class TraceTreeAssertBuilder(private val trace: TraceTree) {
         }
         SpanNodeAssert(trace.rootSpan).apply(block)
     }
+
+    fun anySpan(name: String, block: SpanNodeAssert.() -> Unit = {}) {
+        val node = trace.rootSpan.findDescendant(name)
+            ?: throw AssertionError(
+                "Expected span [$name] anywhere in trace but found: ${trace.spanNames()}"
+            )
+        SpanNodeAssert(node).apply(block)
+    }
+
+    fun anySpan(predicate: (SpanNode) -> Boolean, block: SpanNodeAssert.() -> Unit = {}) {
+        val all = listOf(trace.rootSpan) + trace.rootSpan.allDescendants()
+        val node = all.find(predicate)
+            ?: throw AssertionError(
+                "No span matching predicate in trace. Spans were: ${trace.spanNames()}"
+            )
+        SpanNodeAssert(node).apply(block)
+    }
 }
 
 fun Span.assertThat(block: SpanNodeAssert.() -> Unit) {
