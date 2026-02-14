@@ -42,10 +42,10 @@ class SpanQueryBuilder {
 
     internal fun matches(span: SpanNode): Boolean = predicates.all { it(span) }
 
-    fun first(spans: List<SpanNode>): SpanNode =
+    internal fun first(spans: List<SpanNode>): SpanNode =
         spans.first { matches(it) }
 
-    fun single(spans: List<SpanNode>): SpanNode {
+    internal fun single(spans: List<SpanNode>): SpanNode {
         val matching = spans.filter { matches(it) }
         check(matching.size == 1) {
             "Expected exactly 1 span matching query but found ${matching.size}"
@@ -53,13 +53,13 @@ class SpanQueryBuilder {
         return matching.single()
     }
 
-    fun all(spans: List<SpanNode>): List<SpanNode> =
+    internal fun all(spans: List<SpanNode>): List<SpanNode> =
         spans.filter { matches(it) }
 
-    fun none(spans: List<SpanNode>): Boolean =
+    internal fun none(spans: List<SpanNode>): Boolean =
         spans.none { matches(it) }
 
-    fun count(spans: List<SpanNode>): Int =
+    internal fun count(spans: List<SpanNode>): Int =
         spans.count { matches(it) }
 }
 

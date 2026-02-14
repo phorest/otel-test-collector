@@ -53,7 +53,7 @@ class TraceAssert private constructor(private val trace: TraceTree) {
     }
 }
 
-class SpanInTraceAssert(private val span: Span, private val allSpans: List<Span>) {
+class SpanInTraceAssert internal constructor(private val span: Span, private val allSpans: List<Span>) {
 
     fun hasParent(parentName: String): SpanInTraceAssert = apply {
         val parentSpanId = span.parentSpanId.toHexString()

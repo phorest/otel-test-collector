@@ -26,19 +26,19 @@ fun Span.getLongAttribute(key: String): Long? =
 fun Span.getBoolAttribute(key: String): Boolean? =
     attributesList.find { it.key == key }?.value?.boolValue
 
-fun List<Span>.findByName(name: String): Span? =
+internal fun List<Span>.findByName(name: String): Span? =
     find { it.name == name }
 
-fun List<Span>.filterByName(name: String): List<Span> =
+internal fun List<Span>.filterByName(name: String): List<Span> =
     filter { it.name == name }
 
-fun List<Span>.groupByTraceId(): Map<String, List<Span>> =
+internal fun List<Span>.groupByTraceId(): Map<String, List<Span>> =
     groupBy { it.traceIdHex }
 
-fun List<Span>.rootSpans(): List<Span> =
+internal fun List<Span>.rootSpans(): List<Span> =
     filter { it.parentSpanId.isEmpty }
 
-fun List<Span>.childrenOf(span: Span): List<Span> =
+internal fun List<Span>.childrenOf(span: Span): List<Span> =
     filter { it.parentSpanIdHex == span.spanIdHex }
 
 private fun ByteArray.toHexString(): String =

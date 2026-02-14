@@ -7,7 +7,7 @@ import org.awaitility.kotlin.until
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 
-class InMemorySpanStore {
+internal class InMemorySpanStore {
 
     private val spans = CopyOnWriteArrayList<Span>()
 

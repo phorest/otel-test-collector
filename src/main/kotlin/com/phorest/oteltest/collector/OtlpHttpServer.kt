@@ -7,7 +7,7 @@ import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceResponse
 import org.slf4j.LoggerFactory
 import java.net.InetSocketAddress
 
-class OtlpHttpServer(
+internal class OtlpHttpServer(
     private val port: Int = 4318,
     private val spanStore: InMemorySpanStore
 ) {
