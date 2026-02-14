@@ -68,10 +68,10 @@ class HelloControllerOtelTest {
             containsSpanNamed("GreetingService.greet")
         }.assertThat {
             rootSpan("GET /greet/{name}") {
-                child("GreetingService.greet") {
+                span("GreetingService.greet") {
                     hasAttribute("greeting.name", "Darek")
                     hasStatusOk()
-                    child("GreetingService.buildGreeting")
+                    span("GreetingService.buildGreeting")
                 }
             }
         }

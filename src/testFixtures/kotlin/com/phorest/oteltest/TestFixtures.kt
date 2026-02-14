@@ -72,39 +72,75 @@ object TestFixtures {
     )
 }
 
+data class SpanDef(
+    val name: String,
+    val parent: String?,
+    val attributes: Map<String, String> = emptyMap()
+)
+
+fun spanDef(name: String, parent: String?, vararg attributes: Pair<String, String>): SpanDef =
+    SpanDef(name, parent, attributes.toMap())
+
 class TraceBuilder {
     private val spanIds = mutableMapOf<String, ByteString>()
+    private val nameCounts = mutableMapOf<String, Int>()
     private var idCounter = 0
 
-    private fun spanId(name: String): ByteString =
-        spanIds.getOrPut(name) {
-            ByteString.copyFrom(ByteArray(8) { if (it == 0) (++idCounter).toByte() else 0 })
-        }
+    private fun nextId(): ByteString =
+        ByteString.copyFrom(ByteArray(8) { if (it == 0) (++idCounter).toByte() else 0 })
+
+    private fun newSpanId(name: String): ByteString {
+        val occurrence = nameCounts.merge(name, 1, Int::plus)!!
+        val key = if (occurrence == 1) name else "$name#$occurrence"
+        val id = nextId()
+        spanIds[key] = id
+        if (occurrence == 1) spanIds[name] = id
+        return id
+    }
+
+    private fun parentSpanId(name: String): ByteString =
+        spanIds[name] ?: error("No span named [$name] registered yet")
 
     fun buildSpans(traceId: ByteString, vararg spans: Pair<String, String?>): List<Span> =
-        spans.map { (name, parentName) ->
+        buildSpans(traceId, spans.map { (name, parent) -> SpanDef(name, parent) })
+
+    fun buildSpans(traceId: ByteString, spans: List<SpanDef>): List<Span> =
+        spans.map { def ->
             Span.newBuilder().apply {
-                setName(name)
+                setName(def.name)
                 setTraceId(traceId)
-                setSpanId(spanId(name))
-                if (parentName != null) {
-                    setParentSpanId(spanId(parentName))
+                setSpanId(newSpanId(def.name))
+                if (def.parent != null) {
+                    setParentSpanId(parentSpanId(def.parent))
+                }
+                def.attributes.forEach { (key, value) ->
+                    addAttributes(TestFixtures.attr(key, value))
                 }
             }.build()
         }
 
     fun sendTrace(port: Int, traceId: Int, vararg spans: Pair<String, String?>) {
-        spanIds.clear()
-        idCounter = 0
+        reset()
         val traceIdBytes = ByteString.copyFrom(ByteArray(16) { if (it == 0) traceId.toByte() else 0 })
         val protoSpans = buildSpans(traceIdBytes, *spans)
         TestFixtures.sendSpans(port, *protoSpans.toTypedArray())
     }
 
     fun buildTrace(vararg spans: Pair<String, String?>): List<Span> {
-        spanIds.clear()
-        idCounter = 0
+        reset()
         val traceId = ByteString.copyFrom(ByteArray(16) { 1 })
         return buildSpans(traceId, *spans)
+    }
+
+    fun buildTrace(spans: List<SpanDef>): List<Span> {
+        reset()
+        val traceId = ByteString.copyFrom(ByteArray(16) { 1 })
+        return buildSpans(traceId, spans)
+    }
+
+    private fun reset() {
+        spanIds.clear()
+        nameCounts.clear()
+        idCounter = 0
     }
 }

@@ -2,6 +2,7 @@ package com.phorest.oteltest.dsl
 
 import com.phorest.oteltest.TraceBuilder
 import com.phorest.oteltest.model.TraceTree
+import com.phorest.oteltest.spanDef
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -88,20 +89,20 @@ class TraceQueryDslTest {
         }
 
         @Test
-        fun `child passes for existing child`() {
+        fun `span passes for existing span`() {
             buildTree("root" to null, "child" to "root").assertThat {
                 rootSpan("root") {
-                    child("child")
+                    span("child")
                 }
             }
         }
 
         @Test
-        fun `child fails for missing child`() {
+        fun `span fails for missing span`() {
             val error = assertThrows<AssertionError> {
                 buildTree("root" to null, "child" to "root").assertThat {
                     rootSpan("root") {
-                        child("missing")
+                        span("missing")
                     }
                 }
             }
@@ -111,35 +112,91 @@ class TraceQueryDslTest {
         }
 
         @Test
-        fun `nested children pass for correct structure`() {
+        fun `nested spans pass for correct structure`() {
             buildTree("root" to null, "child" to "root", "grandchild" to "child").assertThat {
                 rootSpan("root") {
-                    child("child") {
-                        child("grandchild")
+                    span("child") {
+                        span("grandchild")
                     }
                 }
             }
         }
 
         @Test
-        fun `nested child fails when not a direct child`() {
+        fun `span fails when not a direct descendant`() {
             assertThrows<AssertionError> {
                 buildTree("root" to null, "child" to "root", "grandchild" to "child").assertThat {
                     rootSpan("root") {
-                        child("grandchild")
+                        span("grandchild")
                     }
                 }
             }
         }
 
         @Test
-        fun `multiple children at same level`() {
+        fun `multiple spans at same level`() {
             buildTree("root" to null, "child1" to "root", "child2" to "root").assertThat {
                 rootSpan("root") {
-                    child("child1")
-                    child("child2")
+                    span("child1")
+                    span("child2")
                 }
             }
+        }
+
+        @Test
+        fun `hasSpans passes for correct count`() {
+            buildTree("root" to null, "DB query" to "root", "DB query" to "root").assertThat {
+                rootSpan("root") {
+                    hasSpans("DB query", 2)
+                }
+            }
+        }
+
+        @Test
+        fun `hasSpans fails for wrong count`() {
+            val error = assertThrows<AssertionError> {
+                buildTree("root" to null, "DB query" to "root", "DB query" to "root").assertThat {
+                    rootSpan("root") {
+                        hasSpans("DB query", 3)
+                    }
+                }
+            }
+            assert(error.message!!.contains("3"))
+            assert(error.message!!.contains("2"))
+        }
+
+        @Test
+        fun `span with index accesses correct span and allows assertions`() {
+            val spans = traceBuilder.buildTrace(listOf(
+                spanDef("root", null),
+                spanDef("DB query", "root", "db.table" to "users"),
+                spanDef("DB query", "root", "db.table" to "orders")
+            ))
+
+            TraceTree.buildFrom(spans).assertThat {
+                rootSpan("root") {
+                    hasSpans("DB query", 2)
+                    span("DB query", 0) {
+                        hasAttribute("db.table", "users")
+                    }
+                    span("DB query", 1) {
+                        hasAttribute("db.table", "orders")
+                    }
+                }
+            }
+        }
+
+        @Test
+        fun `span with index fails when out of bounds`() {
+            val error = assertThrows<AssertionError> {
+                buildTree("root" to null, "DB query" to "root").assertThat {
+                    rootSpan("root") {
+                        span("DB query", 1)
+                    }
+                }
+            }
+            assert(error.message!!.contains("index [1]"))
+            assert(error.message!!.contains("1] spans"))
         }
 
         @Test
@@ -150,8 +207,8 @@ class TraceQueryDslTest {
                 "GreetingService.buildGreeting" to "GreetingService.greet"
             ).assertThat {
                 rootSpan("GET /greet/{name}") {
-                    child("GreetingService.greet") {
-                        child("GreetingService.buildGreeting")
+                    span("GreetingService.greet") {
+                        span("GreetingService.buildGreeting")
                     }
                 }
             }

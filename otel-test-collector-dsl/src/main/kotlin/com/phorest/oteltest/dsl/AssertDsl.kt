@@ -33,12 +33,32 @@ class SpanNodeAssert(private val node: SpanNode) {
         spanAssert.hasEvent(name) { EventNodeAssert(this).apply(block) }
     }
 
-    fun child(name: String, block: SpanNodeAssert.() -> Unit = {}) {
+    fun span(name: String, block: SpanNodeAssert.() -> Unit = {}) {
         val childNode = node.findChild(name)
             ?: throw AssertionError(
-                "Expected child span [$name] under [${node.name}] but children were: ${node.children.map { it.name }}"
+                "Expected span [$name] under [${node.name}] but spans were: ${node.children.map { it.name }}"
             )
         SpanNodeAssert(childNode).apply(block)
+    }
+
+    fun span(name: String, index: Int, block: SpanNodeAssert.() -> Unit = {}) {
+        val matching = node.children.filter { it.name == name }
+        if (index >= matching.size) {
+            throw AssertionError(
+                "Expected span [$name] at index [$index] under [${node.name}] " +
+                    "but only found [${matching.size}] spans named [$name]"
+            )
+        }
+        SpanNodeAssert(matching[index]).apply(block)
+    }
+
+    fun hasSpans(name: String, expected: Int) {
+        val actual = node.children.count { it.name == name }
+        if (actual != expected) {
+            throw AssertionError(
+                "Expected [$expected] spans named [$name] under [${node.name}] but found [$actual]"
+            )
+        }
     }
 }
 
