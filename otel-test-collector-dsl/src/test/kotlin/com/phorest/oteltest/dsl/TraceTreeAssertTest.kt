@@ -1,7 +1,6 @@
-package com.phorest.oteltest.assertions
+package com.phorest.oteltest.dsl
 
 import com.phorest.oteltest.TraceBuilder
-import com.phorest.oteltest.dsl.assertThat
 import com.phorest.oteltest.model.TraceTree
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

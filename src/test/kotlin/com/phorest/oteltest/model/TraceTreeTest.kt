@@ -1,4 +1,4 @@
-package com.phorest.oteltest.dsl
+package com.phorest.oteltest.model
 
 import com.google.protobuf.ByteString
 import com.phorest.oteltest.TraceBuilder
