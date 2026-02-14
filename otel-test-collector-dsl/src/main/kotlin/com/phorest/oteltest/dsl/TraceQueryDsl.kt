@@ -18,7 +18,7 @@ class TraceQueryBuilder {
     }
 
     fun hasMinSpanCount(count: Int) {
-        predicates.add { it.spanCount >= count }
+        predicates.add { trace -> trace.spanCount >= count }
     }
 
     internal fun matches(trace: TraceTree): Boolean = predicates.all { it(trace) }
