@@ -31,8 +31,7 @@ dependencies {
     testImplementation(project(":"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly("org.jetbrains.kotlin:kotlin-stdlib:2.3.10")
-    testRuntimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+
 }
 
 val copyOtelAgent by tasks.registering(Copy::class) {

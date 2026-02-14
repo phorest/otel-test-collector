@@ -21,7 +21,6 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion = "3.4.0"
 val otelProtoVersion = "1.5.0-alpha"
 val junitVersion = "5.11.4"
 val awaitilityVersion = "4.2.2"
@@ -31,8 +30,6 @@ val logbackVersion = "1.4.14"
 
 dependencies {
     // Core
-    implementation("io.ktor:ktor-server-core:$ktorVersion")
-    implementation("io.ktor:ktor-server-netty:$ktorVersion")
     api("io.opentelemetry.proto:opentelemetry-proto:$otelProtoVersion")
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
 
@@ -45,8 +42,6 @@ dependencies {
     // Test
     testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
     testImplementation("io.mockk:mockk:$mockkVersion")
-    testImplementation("io.ktor:ktor-client-core:$ktorVersion")
-    testImplementation("io.ktor:ktor-client-cio:$ktorVersion")
     testImplementation("ch.qos.logback:logback-classic:$logbackVersion")
 }
 
