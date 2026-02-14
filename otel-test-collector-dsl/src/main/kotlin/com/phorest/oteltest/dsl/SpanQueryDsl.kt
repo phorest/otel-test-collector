@@ -1,13 +1,14 @@
 package com.phorest.oteltest.dsl
 
 import com.phorest.oteltest.collector.OtlpTestCollector
+import com.phorest.oteltest.model.SpanNode
 import com.phorest.oteltest.util.AwaitUtils
 import io.opentelemetry.proto.trace.v1.Span
 import java.time.Duration
 
 @OtelTestDsl
 class SpanQueryBuilder {
-    private val predicates = mutableListOf<(Span) -> Boolean>()
+    private val predicates = mutableListOf<(SpanNode) -> Boolean>()
 
     fun withName(name: String) {
         predicates.add { it.name == name }
@@ -35,16 +36,16 @@ class SpanQueryBuilder {
 
     fun withTraceId(traceId: String) {
         predicates.add { span ->
-            span.traceId.toByteArray().joinToString("") { "%02x".format(it) } == traceId
+            span.span.traceId.toByteArray().joinToString("") { "%02x".format(it) } == traceId
         }
     }
 
-    internal fun matches(span: Span): Boolean = predicates.all { it(span) }
+    internal fun matches(span: SpanNode): Boolean = predicates.all { it(span) }
 
-    fun first(spans: List<Span>): Span =
+    fun first(spans: List<SpanNode>): SpanNode =
         spans.first { matches(it) }
 
-    fun single(spans: List<Span>): Span {
+    fun single(spans: List<SpanNode>): SpanNode {
         val matching = spans.filter { matches(it) }
         check(matching.size == 1) {
             "Expected exactly 1 span matching query but found ${matching.size}"
@@ -52,13 +53,13 @@ class SpanQueryBuilder {
         return matching.single()
     }
 
-    fun all(spans: List<Span>): List<Span> =
+    fun all(spans: List<SpanNode>): List<SpanNode> =
         spans.filter { matches(it) }
 
-    fun none(spans: List<Span>): Boolean =
+    fun none(spans: List<SpanNode>): Boolean =
         spans.none { matches(it) }
 
-    fun count(spans: List<Span>): Int =
+    fun count(spans: List<SpanNode>): Int =
         spans.count { matches(it) }
 }
 
@@ -70,20 +71,20 @@ fun OtlpTestCollector.spans(block: SpanQueryBuilder.() -> Unit): SpanQueryResult
 fun OtlpTestCollector.awaitSpanMatching(
     timeout: Duration = Duration.ofSeconds(10),
     block: SpanQueryBuilder.() -> Unit
-): Span {
+): SpanNode {
     val builder = SpanQueryBuilder().apply(block)
     return AwaitUtils.awaitUntilNotNull(timeout = timeout) {
         getSpans().firstOrNull { builder.matches(it) }
     }
 }
 
-class SpanQueryResult(private val builder: SpanQueryBuilder, private val spans: List<Span>) {
+class SpanQueryResult(private val builder: SpanQueryBuilder, private val spans: List<SpanNode>) {
 
-    fun first(): Span = builder.first(spans)
+    fun first(): SpanNode = builder.first(spans)
 
-    fun single(): Span = builder.single(spans)
+    fun single(): SpanNode = builder.single(spans)
 
-    fun all(): List<Span> = builder.all(spans)
+    fun all(): List<SpanNode> = builder.all(spans)
 
     fun none(): Boolean = builder.none(spans)
 

@@ -1,5 +1,7 @@
 package com.phorest.oteltest.model
 
+import com.phorest.oteltest.assertions.SpanAssert
+import com.phorest.oteltest.assertions.TraceAssert
 import com.phorest.oteltest.util.spanIdHex
 import com.phorest.oteltest.util.parentSpanIdHex
 import com.phorest.oteltest.util.traceIdHex
@@ -12,6 +14,8 @@ class SpanNode(
     val name: String get() = span.name
     val spanIdHex: String get() = span.spanIdHex
     val parentSpanIdHex: String get() = span.parentSpanIdHex
+    val kind: Span.SpanKind get() = span.kind
+    val attributesList get() = span.attributesList
 
     val depth: Int
         get() = 1 + (children.maxOfOrNull { it.depth } ?: 0)
@@ -30,6 +34,8 @@ class SpanNode(
 
     fun allDescendants(): List<SpanNode> =
         children + children.flatMap { it.allDescendants() }
+
+    fun assertThat(): SpanAssert = SpanAssert.assertThat(span)
 
     override fun toString(): String = buildString {
         appendTree(this@SpanNode, indent = 0)
@@ -57,6 +63,8 @@ class TraceTree(
 
     fun spanNames(): List<String> = allSpans.map { it.name }
 
+    fun assertThat(): TraceAssert = TraceAssert.assertThat(this)
+
     override fun toString(): String = buildString {
         appendLine("Trace [$traceId] (${allSpans.size} spans, depth $depth)")
         append(rootSpan)
@@ -72,7 +80,9 @@ class TraceTree(
             val spanById = spans.associateBy { it.spanIdHex }
 
             fun buildNode(span: Span): SpanNode {
-                val childSpans = byParentId[span.spanIdHex] ?: emptyList()
+                val childSpans = (byParentId[span.spanIdHex] ?: emptyList())
+                    .filter { it.spanIdHex != span.spanIdHex }
+                    .sortedBy { it.startTimeUnixNano }
                 return SpanNode(span, childSpans.map { buildNode(it) })
             }
 

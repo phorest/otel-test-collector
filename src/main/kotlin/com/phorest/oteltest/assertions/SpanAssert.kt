@@ -134,8 +134,6 @@ private fun assert(condition: Boolean, message: () -> String) {
 
 private fun fail(message: String): Nothing = throw AssertionError(message)
 
-fun Span.assertThat(): SpanAssert = SpanAssert.assertThat(this)
-
 class EventAssert(private val event: Event) {
 
     fun hasAttribute(key: String, value: String): EventAssert = apply {

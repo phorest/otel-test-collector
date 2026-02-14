@@ -1,9 +1,9 @@
 package com.phorest.oteltest.sample
 
 import com.phorest.oteltest.dsl.assertThat
-import com.phorest.oteltest.junit5.OtlpCollectorExtension
 import com.phorest.oteltest.dsl.awaitSpanMatching
 import com.phorest.oteltest.dsl.awaitTraceMatching
+import com.phorest.oteltest.junit5.OtlpCollectorExtension
 import io.opentelemetry.proto.trace.v1.Span
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension

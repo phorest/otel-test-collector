@@ -1,7 +1,5 @@
 package com.phorest.oteltest.sample;
 
-import com.phorest.oteltest.assertions.SpanAssert;
-import com.phorest.oteltest.assertions.TraceAssert;
 import com.phorest.oteltest.junit5.OtlpCollectorExtension;
 import io.opentelemetry.proto.trace.v1.Span;
 import org.junit.jupiter.api.Test;
@@ -30,11 +28,9 @@ class HelloControllerOtelTest {
         assertEquals(200, response.getStatusCode().value());
         assertEquals("Hello, World!", response.getBody());
 
-        var serverSpan = collector.awaitSpan(span ->
+        collector.awaitSpan(span ->
                 span.getKind() == Span.SpanKind.SPAN_KIND_SERVER && span.getName().contains("hello")
-        );
-
-        SpanAssert.assertThat(serverSpan)
+        ).assertThat()
                 .hasKind(Span.SpanKind.SPAN_KIND_SERVER);
     }
 
@@ -42,11 +38,9 @@ class HelloControllerOtelTest {
     void capturesErrorSpanWithExceptionEvent() {
         restTemplate.getForEntity("/fail", String.class);
 
-        var errorSpan = collector.awaitSpan(span ->
+        collector.awaitSpan(span ->
                 span.getKind() == Span.SpanKind.SPAN_KIND_SERVER && span.getName().contains("fail")
-        );
-
-        SpanAssert.assertThat(errorSpan)
+        ).assertThat()
                 .hasKind(Span.SpanKind.SPAN_KIND_SERVER)
                 .hasStatusError()
                 .hasEvent("exception", event -> {
@@ -61,9 +55,7 @@ class HelloControllerOtelTest {
 
         var trace = collector.awaitTrace(t ->
                 t.spanNames().contains("GreetingService.greet")
-        );
-
-        TraceAssert.assertThat(trace)
+        ).assertThat()
                 .hasSpanCount(3)
                 .hasRootSpan("GET /greet/{name}")
                 .spanWithName("GreetingService.buildGreeting")
@@ -74,11 +66,9 @@ class HelloControllerOtelTest {
     void verifiesCustomAttributesOnGreetingSpan() {
         restTemplate.getForEntity("/greet/Darek", String.class);
 
-        var greetSpan = collector.awaitSpan(span ->
+        collector.awaitSpan(span ->
                 span.getName().equals("GreetingService.greet")
-        );
-
-        SpanAssert.assertThat(greetSpan)
+        ).assertThat()
                 .hasAttribute("greeting.name", "Darek")
                 .hasStatusOk();
     }

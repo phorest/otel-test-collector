@@ -2,6 +2,7 @@ package com.phorest.oteltest.model
 
 import com.google.protobuf.ByteString
 import com.phorest.oteltest.TraceBuilder
+import com.phorest.oteltest.assertions.TraceAssert
 import com.phorest.oteltest.model.TraceTree
 import io.opentelemetry.proto.trace.v1.Span
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -93,8 +94,7 @@ class TraceTreeTest {
         val tree = TraceTree.buildFrom(spans)
 
         assertEquals(2, tree.rootSpan.children.size)
-        val childNames = tree.rootSpan.children.map { it.name }.toSet()
-        assertEquals(setOf("child1", "child2"), childNames)
+        assertEquals(listOf("child1", "child2"), tree.rootSpan.children.map { it.name })
     }
 
     @Test
@@ -170,5 +170,47 @@ class TraceTreeTest {
 
         val tree = TraceTree.buildFrom(spans)
         assertEquals("orphan", tree.rootSpan.name)
+    }
+
+    @Test
+    fun `children are ordered by start time`() {
+        val traceId = ByteString.copyFrom(ByteArray(16) { 1 })
+        val rootId = ByteString.copyFrom(ByteArray(8) { 1 })
+        val child1Id = ByteString.copyFrom(ByteArray(8) { 2 })
+        val child2Id = ByteString.copyFrom(ByteArray(8) { 3 })
+        val child3Id = ByteString.copyFrom(ByteArray(8) { 4 })
+
+        val spans = listOf(
+            Span.newBuilder().setName("root").setTraceId(traceId).setSpanId(rootId)
+                .setStartTimeUnixNano(1000).build(),
+            Span.newBuilder().setName("late-child").setTraceId(traceId).setSpanId(child1Id)
+                .setParentSpanId(rootId).setStartTimeUnixNano(5000).build(),
+            Span.newBuilder().setName("early-child").setTraceId(traceId).setSpanId(child2Id)
+                .setParentSpanId(rootId).setStartTimeUnixNano(2000).build(),
+            Span.newBuilder().setName("middle-child").setTraceId(traceId).setSpanId(child3Id)
+                .setParentSpanId(rootId).setStartTimeUnixNano(3000).build()
+        )
+
+        val tree = TraceTree.buildFrom(spans)
+        assertEquals(
+            listOf("early-child", "middle-child", "late-child"),
+            tree.rootSpan.children.map { it.name }
+        )
+    }
+
+    @Test
+    fun `SpanNode assertThat returns SpanAssert`() {
+        val spans = traceBuilder.buildTrace("root" to null)
+        val tree = TraceTree.buildFrom(spans)
+
+        tree.rootSpan.assertThat().hasName("root")
+    }
+
+    @Test
+    fun `TraceTree assertThat returns TraceAssert`() {
+        val spans = traceBuilder.buildTrace("root" to null, "child" to "root")
+        val tree = TraceTree.buildFrom(spans)
+
+        tree.assertThat().hasSpanCount(2).hasRootSpan("root")
     }
 }

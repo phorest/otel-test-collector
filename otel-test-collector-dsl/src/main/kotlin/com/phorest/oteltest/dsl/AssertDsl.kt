@@ -105,11 +105,9 @@ class TraceTreeAssertBuilder(private val trace: TraceTree) {
     }
 }
 
-fun Span.assertThat(block: SpanNodeAssert.() -> Unit) {
-    SpanNodeAssert(SpanNode(this, emptyList())).apply(block)
+fun SpanNode.assertThat(block: SpanNodeAssert.() -> Unit) {
+    SpanNodeAssert(this).apply(block)
 }
-
-fun TraceTree.assertThat(): TraceAssert = TraceAssert.assertThat(this)
 
 fun TraceTree.assertThat(block: TraceTreeAssertBuilder.() -> Unit) {
     TraceTreeAssertBuilder(this).apply(block)

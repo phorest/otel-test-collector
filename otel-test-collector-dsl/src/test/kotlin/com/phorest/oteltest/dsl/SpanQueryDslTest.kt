@@ -1,6 +1,7 @@
 package com.phorest.oteltest.dsl
 
 import com.phorest.oteltest.TestFixtures.attr
+import com.phorest.oteltest.model.SpanNode
 import io.opentelemetry.proto.trace.v1.Span
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -10,12 +11,15 @@ import org.junit.jupiter.api.assertThrows
 
 class SpanQueryDslTest {
 
-    private fun span(name: String): Span = Span.newBuilder().setName(name).build()
+    private fun span(name: String): SpanNode =
+        SpanNode(Span.newBuilder().setName(name).build(), emptyList())
+
+    private fun span(proto: Span): SpanNode = SpanNode(proto, emptyList())
 
     private fun query(block: SpanQueryBuilder.() -> Unit): SpanQueryBuilder =
         SpanQueryBuilder().apply(block)
 
-    private fun queryResult(spans: List<Span>, block: SpanQueryBuilder.() -> Unit): SpanQueryResult {
+    private fun queryResult(spans: List<SpanNode>, block: SpanQueryBuilder.() -> Unit): SpanQueryResult {
         val builder = query(block)
         return SpanQueryResult(builder, spans)
     }
@@ -40,8 +44,8 @@ class SpanQueryDslTest {
         @Test
         fun `withKind filters by span kind`() {
             val spans = listOf(
-                Span.newBuilder().setName("server").setKind(Span.SpanKind.SPAN_KIND_SERVER).build(),
-                Span.newBuilder().setName("client").setKind(Span.SpanKind.SPAN_KIND_CLIENT).build()
+                span(Span.newBuilder().setName("server").setKind(Span.SpanKind.SPAN_KIND_SERVER).build()),
+                span(Span.newBuilder().setName("client").setKind(Span.SpanKind.SPAN_KIND_CLIENT).build())
             )
             val result = queryResult(spans) { withKind(Span.SpanKind.SPAN_KIND_SERVER) }
             assertEquals(1, result.count())
@@ -51,7 +55,7 @@ class SpanQueryDslTest {
         @Test
         fun `withAttribute matches key and value`() {
             val spans = listOf(
-                Span.newBuilder().setName("db").addAttributes(attr("db.system", "postgresql")).build(),
+                span(Span.newBuilder().setName("db").addAttributes(attr("db.system", "postgresql")).build()),
                 span("other")
             )
             val result = queryResult(spans) { withAttribute("db.system", "postgresql") }
@@ -61,7 +65,7 @@ class SpanQueryDslTest {
         @Test
         fun `withAttribute matches key only`() {
             val spans = listOf(
-                Span.newBuilder().setName("db").addAttributes(attr("db.system", "postgresql")).build(),
+                span(Span.newBuilder().setName("db").addAttributes(attr("db.system", "postgresql")).build()),
                 span("other")
             )
             val result = queryResult(spans) { withAttribute("db.system") }
@@ -71,9 +75,9 @@ class SpanQueryDslTest {
         @Test
         fun `multiple predicates are combined with AND`() {
             val spans = listOf(
-                Span.newBuilder().setName("GET /api").setKind(Span.SpanKind.SPAN_KIND_SERVER)
-                    .addAttributes(attr("http.method", "GET")).build(),
-                Span.newBuilder().setName("GET /api").setKind(Span.SpanKind.SPAN_KIND_CLIENT).build(),
+                span(Span.newBuilder().setName("GET /api").setKind(Span.SpanKind.SPAN_KIND_SERVER)
+                    .addAttributes(attr("http.method", "GET")).build()),
+                span(Span.newBuilder().setName("GET /api").setKind(Span.SpanKind.SPAN_KIND_CLIENT).build()),
                 span("POST /api")
             )
             val result = queryResult(spans) {

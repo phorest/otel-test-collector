@@ -1,6 +1,7 @@
 package com.phorest.oteltest.junit5
 
 import com.phorest.oteltest.collector.OtlpTestCollector
+import com.phorest.oteltest.model.SpanNode
 import com.phorest.oteltest.model.TraceTree
 import com.phorest.oteltest.util.AwaitUtils
 import io.opentelemetry.proto.trace.v1.Span
@@ -83,12 +84,12 @@ class OtlpCollectorExtension private constructor(
 
     fun getPort(): Int = ensureStarted().getPort()
 
-    fun getSpans(): List<Span> = ensureStarted().getSpans()
+    fun getSpans(): List<SpanNode> = ensureStarted().getSpans()
 
-    fun awaitSpans(count: Int): List<Span> =
+    fun awaitSpans(count: Int): List<SpanNode> =
         ensureStarted().awaitSpans(count, awaitTimeout)
 
-    fun awaitSpan(predicate: (Span) -> Boolean): Span =
+    fun awaitSpan(predicate: (SpanNode) -> Boolean): SpanNode =
         ensureStarted().awaitSpan(awaitTimeout, predicate)
 
     fun traces(): List<TraceTree> = ensureStarted().traces()

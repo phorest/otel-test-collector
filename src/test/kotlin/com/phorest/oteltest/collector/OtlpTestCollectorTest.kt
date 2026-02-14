@@ -2,6 +2,7 @@ package com.phorest.oteltest.collector
 
 import com.phorest.oteltest.TestFixtures.attr
 import com.phorest.oteltest.TestFixtures.sendSpans
+import com.phorest.oteltest.TraceBuilder
 import io.opentelemetry.proto.trace.v1.Span
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -186,5 +187,40 @@ class OtlpTestCollectorTest {
         assertThrows<Exception> {
             sendSpans(port, "after-close")
         }
+    }
+
+    @Test
+    fun `awaitSpan returns SpanNode with children`() {
+        collector = OtlpTestCollector.builder().port(0).build().start()
+        val traceBuilder = TraceBuilder()
+
+        traceBuilder.sendTrace(collector!!.getPort(), 1, "parent" to null, "child" to "parent")
+        val result = collector!!.awaitSpan { it.name == "parent" }
+
+        assertEquals("parent", result.name)
+        assertEquals(1, result.children.size)
+        assertEquals("child", result.children.first().name)
+    }
+
+    @Test
+    fun `getSpans returns SpanNode list`() {
+        collector = OtlpTestCollector.builder().port(0).build().start()
+
+        sendSpans(collector!!.getPort(), "span-a", "span-b")
+        collector!!.awaitSpans(2)
+
+        val spans = collector!!.getSpans()
+        assertEquals(2, spans.size)
+        assertEquals("span-a", spans[0].name)
+    }
+
+    @Test
+    fun `SpanNode assertThat returns SpanAssert`() {
+        collector = OtlpTestCollector.builder().port(0).build().start()
+
+        sendSpans(collector!!.getPort(), "test-span")
+        val span = collector!!.awaitSpan { it.name == "test-span" }
+
+        span.assertThat().hasName("test-span")
     }
 }
