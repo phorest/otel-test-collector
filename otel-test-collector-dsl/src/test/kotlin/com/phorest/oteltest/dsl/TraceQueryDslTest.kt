@@ -176,10 +176,10 @@ class TraceQueryDslTest {
             TraceTree.buildFrom(spans).assertThat {
                 rootSpan("root") {
                     hasSpans("DB query", 2)
-                    span("DB query", 0) {
+                    span("DB query")[0] {
                         hasAttribute("db.table", "users")
                     }
-                    span("DB query", 1) {
+                    span("DB query")[1] {
                         hasAttribute("db.table", "orders")
                     }
                 }
@@ -191,7 +191,7 @@ class TraceQueryDslTest {
             val error = assertThrows<AssertionError> {
                 buildTree("root" to null, "DB query" to "root").assertThat {
                     rootSpan("root") {
-                        span("DB query", 1)
+                        span("DB query")[1]
                     }
                 }
             }

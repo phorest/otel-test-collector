@@ -19,6 +19,8 @@ class EventNodeAssert(private val eventAssert: EventAssert) {
 class SpanNodeAssert(private val node: SpanNode) {
     private val spanAssert = SpanAssert.assertThat(node.span)
 
+    operator fun invoke(block: SpanNodeAssert.() -> Unit) = apply(block)
+
     fun hasKind(expected: Span.SpanKind) { spanAssert.hasKind(expected) }
 
     fun hasAttribute(key: String, value: String) { spanAssert.hasAttribute(key, value) }
@@ -33,7 +35,7 @@ class SpanNodeAssert(private val node: SpanNode) {
         spanAssert.hasEvent(name) { EventNodeAssert(this).apply(block) }
     }
 
-    fun span(name: String, block: SpanNodeAssert.() -> Unit = {}) {
+    fun span(name: String, block: SpanNodeAssert.() -> Unit) {
         val childNode = node.findChild(name)
             ?: throw AssertionError(
                 "Expected span [$name] under [${node.name}] but spans were: ${node.children.map { it.name }}"
@@ -41,15 +43,14 @@ class SpanNodeAssert(private val node: SpanNode) {
         SpanNodeAssert(childNode).apply(block)
     }
 
-    fun span(name: String, index: Int, block: SpanNodeAssert.() -> Unit = {}) {
+    fun span(name: String): SpanSelector {
         val matching = node.children.filter { it.name == name }
-        if (index >= matching.size) {
+        if (matching.isEmpty()) {
             throw AssertionError(
-                "Expected span [$name] at index [$index] under [${node.name}] " +
-                    "but only found [${matching.size}] spans named [$name]"
+                "Expected span [$name] under [${node.name}] but spans were: ${node.children.map { it.name }}"
             )
         }
-        SpanNodeAssert(matching[index]).apply(block)
+        return SpanSelector(matching, name, node.name)
     }
 
     fun hasSpans(name: String, expected: Int) {
@@ -59,6 +60,20 @@ class SpanNodeAssert(private val node: SpanNode) {
                 "Expected [$expected] spans named [$name] under [${node.name}] but found [$actual]"
             )
         }
+    }
+}
+
+@OtelTestDsl
+class SpanSelector(private val matching: List<SpanNode>, private val name: String, private val parentName: String) {
+
+    operator fun get(index: Int): SpanNodeAssert {
+        if (index >= matching.size) {
+            throw AssertionError(
+                "Expected span [$name] at index [$index] under [$parentName] " +
+                    "but only found [${matching.size}] spans named [$name]"
+            )
+        }
+        return SpanNodeAssert(matching[index])
     }
 }
 
