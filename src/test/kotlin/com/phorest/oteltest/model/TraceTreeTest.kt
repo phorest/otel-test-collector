@@ -8,6 +8,7 @@ import io.opentelemetry.proto.trace.v1.Span
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -150,8 +151,8 @@ class TraceTreeTest {
         val tree = TraceTree.buildFrom(spans)
 
         val output = tree.toString()
-        assert(output.contains("root"))
-        assert(output.contains("child"))
+        assertTrue(output.contains("root"))
+        assertTrue(output.contains("child"))
     }
 
     @Test

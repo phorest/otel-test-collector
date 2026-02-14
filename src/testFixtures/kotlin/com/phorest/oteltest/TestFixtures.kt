@@ -46,6 +46,8 @@ object TestFixtures {
         val url = URI("http://localhost:$port/v1/traces").toURL()
         val connection = url.openConnection() as HttpURLConnection
         return try {
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 5_000
             connection.requestMethod = "POST"
             connection.doOutput = true
             connection.setRequestProperty("Content-Type", "application/x-protobuf")

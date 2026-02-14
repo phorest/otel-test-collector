@@ -32,6 +32,15 @@ class SpanNode(
         return null
     }
 
+    fun findDescendantById(spanId: String): SpanNode? {
+        if (this.spanIdHex == spanId) return this
+        for (child in children) {
+            val found = child.findDescendantById(spanId)
+            if (found != null) return found
+        }
+        return null
+    }
+
     fun allDescendants(): List<SpanNode> =
         children + children.flatMap { it.allDescendants() }
 
@@ -61,6 +70,8 @@ class TraceTree(
 
     fun findSpan(name: String): SpanNode? = rootSpan.findDescendant(name)
 
+    fun findSpanById(spanId: String): SpanNode? = rootSpan.findDescendantById(spanId)
+
     fun spanNames(): List<String> = allSpans.map { it.name }
 
     fun assertThat(): TraceAssert = TraceAssert.assertThat(this)
@@ -76,6 +87,9 @@ class TraceTree(
             require(spans.isNotEmpty()) { "Cannot build trace from empty span list" }
 
             val traceId = spans.first().traceIdHex
+            require(spans.all { it.traceIdHex == traceId }) {
+                "Expected all spans to share one traceId but found: ${spans.map { it.traceIdHex }.distinct()}"
+            }
             val byParentId = spans.groupBy { it.parentSpanIdHex }
             val spanById = spans.associateBy { it.spanIdHex }
 

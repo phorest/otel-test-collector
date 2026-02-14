@@ -2,6 +2,7 @@ package com.phorest.oteltest.collector
 
 import com.phorest.oteltest.model.SpanNode
 import com.phorest.oteltest.model.TraceTree
+import com.phorest.oteltest.util.spanIdHex
 import com.phorest.oteltest.util.traceIdHex
 import io.opentelemetry.proto.trace.v1.Span
 import java.time.Duration
@@ -48,7 +49,7 @@ class OtlpTestCollector private constructor(
         if (traceSpans.size > 1) {
             return try {
                 val tree = TraceTree.buildFrom(traceSpans)
-                tree.findSpan(span.name) ?: span.toSpanNode()
+                tree.findSpanById(span.spanIdHex) ?: span.toSpanNode()
             } catch (_: IllegalStateException) {
                 span.toSpanNode()
             }

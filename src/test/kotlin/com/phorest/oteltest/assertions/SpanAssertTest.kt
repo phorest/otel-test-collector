@@ -5,6 +5,7 @@ import com.phorest.oteltest.TestFixtures.attr
 import com.phorest.oteltest.TestFixtures.span
 import io.opentelemetry.proto.trace.v1.Span
 import io.opentelemetry.proto.trace.v1.Status
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Duration
@@ -23,8 +24,8 @@ class SpanAssertTest {
             SpanAssert.assertThat(span("POST /api"))
                 .hasName("GET /api")
         }
-        assert(error.message!!.contains("GET /api"))
-        assert(error.message!!.contains("POST /api"))
+        assertTrue(error.message!!.contains("GET /api"))
+        assertTrue(error.message!!.contains("POST /api"))
     }
 
     @Test
@@ -61,8 +62,8 @@ class SpanAssertTest {
         val error = assertThrows<AssertionError> {
             SpanAssert.assertThat(s).hasKind(Span.SpanKind.SPAN_KIND_SERVER)
         }
-        assert(error.message!!.contains("SERVER"))
-        assert(error.message!!.contains("CLIENT"))
+        assertTrue(error.message!!.contains("SERVER"))
+        assertTrue(error.message!!.contains("CLIENT"))
     }
 
     @Test
@@ -81,8 +82,8 @@ class SpanAssertTest {
             SpanAssert.assertThat(span("test"))
                 .hasAttribute("http.method", "GET")
         }
-        assert(error.message!!.contains("http.method"))
-        assert(error.message!!.contains("not present"))
+        assertTrue(error.message!!.contains("http.method"))
+        assertTrue(error.message!!.contains("not present"))
     }
 
     @Test
@@ -95,8 +96,8 @@ class SpanAssertTest {
         val error = assertThrows<AssertionError> {
             SpanAssert.assertThat(s).hasAttribute("http.method", "GET")
         }
-        assert(error.message!!.contains("GET"))
-        assert(error.message!!.contains("POST"))
+        assertTrue(error.message!!.contains("GET"))
+        assertTrue(error.message!!.contains("POST"))
     }
 
     @Test
@@ -197,7 +198,7 @@ class SpanAssertTest {
         val error = assertThrows<AssertionError> {
             SpanAssert.assertThat(span("test")).hasEvent("exception")
         }
-        assert(error.message!!.contains("exception"))
+        assertTrue(error.message!!.contains("exception"))
     }
 
     @Test

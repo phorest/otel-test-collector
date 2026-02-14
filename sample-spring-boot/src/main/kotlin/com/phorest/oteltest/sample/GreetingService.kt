@@ -15,11 +15,14 @@ class GreetingService {
             .startSpan()
 
         return span.makeCurrent().use {
-            val greeting = buildGreeting(name)
-            span.setAttribute("greeting.length", greeting.length.toLong())
-            span.setStatus(StatusCode.OK)
-            span.end()
-            greeting
+            try {
+                val greeting = buildGreeting(name)
+                span.setAttribute("greeting.length", greeting.length.toLong())
+                span.setStatus(StatusCode.OK)
+                greeting
+            } finally {
+                span.end()
+            }
         }
     }
 
@@ -28,9 +31,15 @@ class GreetingService {
             .startSpan()
 
         return span.makeCurrent().use {
-            Thread.sleep(5) // simulate some work
-            span.end()
-            "Hello, $name!"
+            try {
+                Thread.sleep(5) // simulate some work
+                "Hello, $name!"
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                throw RuntimeException(e)
+            } finally {
+                span.end()
+            }
         }
     }
 }

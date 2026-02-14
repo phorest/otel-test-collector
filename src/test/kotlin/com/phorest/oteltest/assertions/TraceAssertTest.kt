@@ -1,6 +1,7 @@
 package com.phorest.oteltest.assertions
 
 import com.phorest.oteltest.TraceBuilder
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -20,8 +21,8 @@ class TraceAssertTest {
         val error = assertThrows<AssertionError> {
             traceBuilder.buildTrace("root" to null).asTrace().hasSpanCount(3)
         }
-        assert(error.message!!.contains("3"))
-        assert(error.message!!.contains("1"))
+        assertTrue(error.message!!.contains("3"))
+        assertTrue(error.message!!.contains("1"))
     }
 
     @Test
@@ -36,8 +37,8 @@ class TraceAssertTest {
         val error = assertThrows<AssertionError> {
             traceBuilder.buildTrace("actual-root" to null).asTrace().hasRootSpan("expected-root")
         }
-        assert(error.message!!.contains("expected-root"))
-        assert(error.message!!.contains("actual-root"))
+        assertTrue(error.message!!.contains("expected-root"))
+        assertTrue(error.message!!.contains("actual-root"))
     }
 
     @Test
@@ -80,7 +81,7 @@ class TraceAssertTest {
         val error = assertThrows<AssertionError> {
             traceBuilder.buildTrace("root" to null).asTrace().spanWithName("missing")
         }
-        assert(error.message!!.contains("missing"))
+        assertTrue(error.message!!.contains("missing"))
     }
 
     @Test
@@ -91,8 +92,8 @@ class TraceAssertTest {
                 .spanWithName("child")
                 .hasParent("wrong-parent")
         }
-        assert(error.message!!.contains("wrong-parent"))
-        assert(error.message!!.contains("root"))
+        assertTrue(error.message!!.contains("wrong-parent"))
+        assertTrue(error.message!!.contains("root"))
     }
 
     @Test
