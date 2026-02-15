@@ -13,31 +13,60 @@ No external infrastructure required — just add the dependency and write tests.
 
 ## Installation
 
-### Kotlin Projects
+This library is published via [JitPack](https://jitpack.io). Add the JitPack repository and the dependency to your build file.
 
-The DSL module includes the core module transitively — a single dependency is all you need:
-
-```kotlin
-testImplementation("com.phorest:otel-test-collector-dsl:0.1.0-SNAPSHOT")
-```
-
-### Java Projects
-
-Java projects only need the core module:
+### Gradle (Kotlin DSL)
 
 ```kotlin
-testImplementation("com.phorest:otel-test-collector:0.1.0-SNAPSHOT")
+repositories {
+    maven { url = uri("https://jitpack.io") }
+}
+
+dependencies {
+    // Kotlin projects — DSL includes the core module transitively
+    testImplementation("com.github.phorest.otel-test-collector:otel-test-collector-dsl:main-SNAPSHOT")
+
+    // Java projects — core module only
+    testImplementation("com.github.phorest.otel-test-collector:otel-test-collector:main-SNAPSHOT")
+}
 ```
 
 ### Gradle (Groovy DSL)
 
 ```groovy
-// Kotlin projects
-testImplementation 'com.phorest:otel-test-collector-dsl:0.1.0-SNAPSHOT'
+repositories {
+    maven { url 'https://jitpack.io' }
+}
 
-// Java projects
-testImplementation 'com.phorest:otel-test-collector:0.1.0-SNAPSHOT'
+dependencies {
+    // Kotlin projects
+    testImplementation 'com.github.phorest.otel-test-collector:otel-test-collector-dsl:main-SNAPSHOT'
+
+    // Java projects
+    testImplementation 'com.github.phorest.otel-test-collector:otel-test-collector:main-SNAPSHOT'
+}
 ```
+
+### Maven
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependency>
+    <groupId>com.github.phorest.otel-test-collector</groupId>
+    <!-- Use otel-test-collector-dsl for Kotlin, otel-test-collector for Java -->
+    <artifactId>otel-test-collector</artifactId>
+    <version>main-SNAPSHOT</version>
+    <scope>test</scope>
+</dependency>
+```
+
+> **Tip:** Replace `main-SNAPSHOT` with a specific commit hash or tag for reproducible builds.
 
 ## Quick Start
 
@@ -64,7 +93,6 @@ class HelloControllerOtelTest {
         restTemplate.getForEntity<String>("/hello")
 
         collector.awaitSpanMatching {
-            withKind(Span.SpanKind.SPAN_KIND_SERVER)
             withNameContaining("hello")
         }.assertThat {
             hasKind(Span.SpanKind.SPAN_KIND_SERVER)
@@ -92,12 +120,11 @@ class HelloControllerOtelTest {
     void capturesHttpServerSpan() {
         restTemplate.getForEntity("/hello", String.class);
 
-        collector.awaitSpan(span ->
-                span.getKind() == Span.SpanKind.SPAN_KIND_SERVER
-                        && span.getName().contains("hello")
+        collector.awaitSpan(span -> 
+                        span.getName().contains("hello")
         ).assertThat()
                 .hasKind(Span.SpanKind.SPAN_KIND_SERVER);
-    }
+        }
 }
 ```
 
