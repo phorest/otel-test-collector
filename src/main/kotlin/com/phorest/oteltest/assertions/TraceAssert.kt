@@ -1,6 +1,7 @@
 package com.phorest.oteltest.assertions
 
 import com.google.protobuf.ByteString
+import com.phorest.oteltest.model.SpanNode
 import com.phorest.oteltest.model.TraceTree
 import io.opentelemetry.proto.trace.v1.Span
 
@@ -53,11 +54,11 @@ class TraceAssert private constructor(private val trace: TraceTree) {
     }
 }
 
-class SpanInTraceAssert internal constructor(private val span: Span, private val allSpans: List<Span>) {
+class SpanInTraceAssert internal constructor(private val span: Span, private val allSpans: List<SpanNode>) {
 
     fun hasParent(parentName: String): SpanInTraceAssert = apply {
         val parentSpanId = span.parentSpanId.toHexString()
-        val parent = allSpans.find { it.spanId.toHexString() == parentSpanId }
+        val parent = allSpans.find { it.span.spanId.toHexString() == parentSpanId }
             ?: throw AssertionError(
                 "Expected span [${span.name}] to have a parent but parent span ID [$parentSpanId] was not found in trace"
             )

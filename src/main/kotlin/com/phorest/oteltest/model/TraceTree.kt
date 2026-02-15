@@ -13,7 +13,6 @@ class SpanNode(
 ) {
     val name: String get() = span.name
     val spanIdHex: String get() = span.spanIdHex
-    val parentSpanIdHex: String get() = span.parentSpanIdHex
     val kind: Span.SpanKind get() = span.kind
     val attributesList get() = span.attributesList
 
@@ -80,7 +79,7 @@ class SpanNode(
 class TraceTree(
     val traceId: String,
     val rootSpan: SpanNode,
-    val allSpans: List<Span>
+    val allSpans: List<SpanNode>
 ) {
     val spanCount: Int get() = allSpans.size
 
@@ -135,7 +134,7 @@ class TraceTree(
                 "Expected single root span but found ${roots.size}: ${roots.map { it.name }}"
             }
 
-            return TraceTree(traceId, roots.single(), spans)
+            return TraceTree(traceId, roots.single(), spans.map { SpanNode(it, emptyList()) })
         }
     }
 }
