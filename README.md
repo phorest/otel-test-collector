@@ -283,9 +283,12 @@ val trace = collector.findTrace {
     hasMinSpanCount(3)
 }
 
-// Find all matching traces
+// Find traces containing a span matching multiple criteria
 val traces = collector.findTraces {
-    containsSpanMatching { it.name.startsWith("POST") }
+    containsSpan {
+        withNameContaining("POST")
+        withKind(Span.SpanKind.SPAN_KIND_SERVER)
+    }
 }
 ```
 

@@ -61,7 +61,25 @@ class HelloControllerOtelTest {
     }
 
     @Test
-    fun `verifies full trace tree structure for greet endpoint`() {
+    fun `finds trace using containsSpan with multiple criteria`() {
+        restTemplate.getForEntity<String>("/greet/Darek")
+
+        collector.awaitTraceMatching {
+            containsSpan {
+                withName("GreetingService.greet")
+                withAttribute("greeting.name", "Darek")
+            }
+        }.assertThat {
+            rootSpan("GET /greet/{name}") {
+                span("GreetingService.greet") {
+                    hasAttribute("greeting.name", "Darek")
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `verifies full trace tree structure for greet endpoint and print`() {
         restTemplate.getForEntity<String>("/greet/Darek")
 
         val trace = collector.awaitTraceMatching {

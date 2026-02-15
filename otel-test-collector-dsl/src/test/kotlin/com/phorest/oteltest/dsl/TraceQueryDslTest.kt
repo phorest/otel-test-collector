@@ -48,15 +48,43 @@ class TraceQueryDslTest {
         }
 
         @Test
-        fun `containsSpanMatching matches with custom predicate`() {
+        fun `containsSpan matches with span query builder`() {
             val trace = buildTree("POST /orders" to null)
-            assertTrue(query { containsSpanMatching { it.name.startsWith("POST") } }.matches(trace))
+            assertTrue(query { containsSpan { withNameContaining("POST") } }.matches(trace))
         }
 
         @Test
-        fun `containsSpanMatching does not match when predicate fails`() {
+        fun `containsSpan does not match when no span satisfies query`() {
             val trace = buildTree("GET /api" to null)
-            assertFalse(query { containsSpanMatching { it.name.startsWith("POST") } }.matches(trace))
+            assertFalse(query { containsSpan { withNameContaining("POST") } }.matches(trace))
+        }
+
+        @Test
+        fun `containsSpan with multiple predicates matches span satisfying all`() {
+            val spans = traceBuilder.buildTrace(listOf(
+                spanDef("DB query", null, "db.table" to "users")
+            ))
+            val trace = TraceTree.buildFrom(spans)
+            assertTrue(query {
+                containsSpan {
+                    withName("DB query")
+                    withAttribute("db.table", "users")
+                }
+            }.matches(trace))
+        }
+
+        @Test
+        fun `containsSpan with multiple predicates does not match when one fails`() {
+            val spans = traceBuilder.buildTrace(listOf(
+                spanDef("DB query", null, "db.table" to "users")
+            ))
+            val trace = TraceTree.buildFrom(spans)
+            assertFalse(query {
+                containsSpan {
+                    withName("DB query")
+                    withAttribute("db.table", "orders")
+                }
+            }.matches(trace))
         }
 
         @Test

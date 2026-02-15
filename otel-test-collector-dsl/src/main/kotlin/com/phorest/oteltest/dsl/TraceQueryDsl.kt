@@ -1,6 +1,7 @@
 package com.phorest.oteltest.dsl
 
 import com.phorest.oteltest.collector.OtlpTestCollector
+import com.phorest.oteltest.model.SpanNode
 import com.phorest.oteltest.model.TraceTree
 import com.phorest.oteltest.util.AwaitUtils
 import java.time.Duration
@@ -13,8 +14,11 @@ class TraceQueryBuilder {
         predicates.add { trace -> trace.allSpans.any { it.name == name } }
     }
 
-    fun containsSpanMatching(predicate: (io.opentelemetry.proto.trace.v1.Span) -> Boolean) {
-        predicates.add { trace -> trace.allSpans.any(predicate) }
+    fun containsSpan(block: SpanQueryBuilder.() -> Unit) {
+        val spanQuery = SpanQueryBuilder().apply(block)
+        predicates.add { trace ->
+            trace.allSpans.any { span -> spanQuery.matches(SpanNode(span, emptyList())) }
+        }
     }
 
     fun hasMinSpanCount(count: Int) {
