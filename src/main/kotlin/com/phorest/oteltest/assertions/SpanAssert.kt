@@ -76,7 +76,7 @@ class SpanAssert private constructor(private val span: Span) {
     }
 
     fun hasStatusOk(): SpanAssert = apply {
-        assert(span.status.code == Status.StatusCode.STATUS_CODE_OK) {
+        assert(span.status.code != Status.StatusCode.STATUS_CODE_ERROR) {
             "Expected span status to be OK but was [${span.status.code}]"
         }
     }

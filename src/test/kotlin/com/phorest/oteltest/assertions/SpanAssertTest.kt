@@ -174,6 +174,27 @@ class SpanAssertTest {
     }
 
     @Test
+    fun `hasStatusOk passes for UNSET status`() {
+        val s = Span.newBuilder()
+            .setName("test")
+            .build()
+
+        SpanAssert.assertThat(s).hasStatusOk()
+    }
+
+    @Test
+    fun `hasStatusOk fails for ERROR status`() {
+        val s = Span.newBuilder()
+            .setName("test")
+            .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR))
+            .build()
+
+        assertThrows<AssertionError> {
+            SpanAssert.assertThat(s).hasStatusOk()
+        }
+    }
+
+    @Test
     fun `hasStatusError passes for ERROR status`() {
         val s = Span.newBuilder()
             .setName("test")
