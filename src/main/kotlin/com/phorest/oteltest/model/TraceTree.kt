@@ -46,8 +46,26 @@ class SpanNode(
 
     fun assertThat(): SpanAssert = SpanAssert.assertThat(span)
 
+    fun print() {
+        println(toPrettyString())
+    }
+
+    fun toPrettyString(): String = buildString {
+        appendPrettyTree(this@SpanNode, prefix = "", isLast = true)
+    }
+
     override fun toString(): String = buildString {
         appendTree(this@SpanNode, indent = 0)
+    }
+
+    private fun StringBuilder.appendPrettyTree(node: SpanNode, prefix: String, isLast: Boolean) {
+        append(prefix)
+        append(if (isLast) "└── " else "├── ")
+        appendLine(node.name)
+        val childPrefix = prefix + if (isLast) "    " else "│   "
+        node.children.forEachIndexed { index, child ->
+            appendPrettyTree(child, childPrefix, index == node.children.lastIndex)
+        }
     }
 
     private fun StringBuilder.appendTree(node: SpanNode, indent: Int) {
@@ -75,6 +93,15 @@ class TraceTree(
     fun spanNames(): List<String> = allSpans.map { it.name }
 
     fun assertThat(): TraceAssert = TraceAssert.assertThat(this)
+
+    fun print() {
+        println(toPrettyString())
+    }
+
+    fun toPrettyString(): String = buildString {
+        appendLine("Trace (${allSpans.size} spans)")
+        append(rootSpan.toPrettyString())
+    }
 
     override fun toString(): String = buildString {
         appendLine("Trace [$traceId] (${allSpans.size} spans, depth $depth)")

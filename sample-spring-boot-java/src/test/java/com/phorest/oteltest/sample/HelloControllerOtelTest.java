@@ -55,7 +55,9 @@ class HelloControllerOtelTest {
 
         var trace = collector.awaitTrace(t ->
                 t.spanNames().contains("GreetingService.greet")
-        ).assertThat()
+        );
+        trace.print();
+        trace.assertThat()
                 .hasSpanCount(3)
                 .hasRootSpan("GET /greet/{name}")
                 .spanWithName("GreetingService.buildGreeting")

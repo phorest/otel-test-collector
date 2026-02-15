@@ -156,6 +156,48 @@ class TraceTreeTest {
     }
 
     @Test
+    fun `toPrettyString renders tree with connectors`() {
+        val spans = traceBuilder.buildTrace(
+            "root" to null,
+            "child1" to "root",
+            "child2" to "root",
+            "grandchild" to "child1"
+        )
+        val tree = TraceTree.buildFrom(spans)
+
+        val expected = """
+            |Trace (4 spans)
+            |└── root
+            |    ├── child1
+            |    │   └── grandchild
+            |    └── child2
+            |""".trimMargin()
+
+        assertEquals(expected, tree.toPrettyString())
+    }
+
+    @Test
+    fun `SpanNode toPrettyString renders subtree`() {
+        val spans = traceBuilder.buildTrace("root" to null, "child" to "root")
+        val tree = TraceTree.buildFrom(spans)
+
+        val expected = """
+            |└── root
+            |    └── child
+            |""".trimMargin()
+
+        assertEquals(expected, tree.rootSpan.toPrettyString())
+    }
+
+    @Test
+    fun `toPrettyString renders single span`() {
+        val spans = traceBuilder.buildTrace("root" to null)
+        val tree = TraceTree.buildFrom(spans)
+
+        assertEquals("Trace (1 spans)\n└── root\n", tree.toPrettyString())
+    }
+
+    @Test
     fun `handles orphan spans as roots`() {
         val orphanParentId = ByteString.copyFrom(ByteArray(8) { 0xFF.toByte() })
         val traceId = ByteString.copyFrom(ByteArray(16) { 1 })
