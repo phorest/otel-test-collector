@@ -4,6 +4,37 @@ A lightweight, in-process OpenTelemetry collector for testing. It starts an OTLP
 
 No external infrastructure required — just add the dependency and write tests.
 
+## Architecture
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Test as Client/TestApp
+    participant Agent as OTel Java Agent
+    participant Collector as OtlpHttpServer
+    participant Store as InMemorySpanStore
+    participant Facade as OtlpTestCollector
+
+    rect rgba(200,200,255,0.5)
+    Test->>Agent: instrumented code generates spans
+    Agent-->>Test: export spans to OTLP endpoint
+    end
+
+    rect rgba(200,255,200,0.5)
+    Test->>Collector: POST /v1/traces (protobuf)
+    Collector->>Collector: parse ExportTraceServiceRequest
+    Collector->>Store: addAll(spans)
+    Store-->>Collector: ack
+    Collector-->>Test: 200 OK (ExportTraceServiceResponse)
+    end
+
+    rect rgba(255,200,200,0.5)
+    Facade->>Store: await/query spans/traces
+    Store-->>Facade: matching SpanNode(s)/TraceTree
+    Facade-->>Test: return TraceTree / SpanNode for assertions/DSL
+    end
+```
+
 ## Modules
 
 | Module | Artifact | Description |
