@@ -63,8 +63,6 @@ class OtlpTestCollector private constructor(
 
     fun spansByAttribute(key: String, value: String): List<SpanNode> = spanStore.byAttribute(key, value).toSpanNodes()
 
-    fun spansByTraceId(traceId: String): List<SpanNode> = spanStore.byTraceId(traceId).toSpanNodes()
-
     fun traces(): List<TraceTree> =
         spanStore.getAll()
             .groupBy { it.traceIdHex }

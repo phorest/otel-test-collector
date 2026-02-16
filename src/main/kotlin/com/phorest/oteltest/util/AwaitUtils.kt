@@ -7,14 +7,6 @@ import java.time.Duration
 
 object AwaitUtils {
 
-    fun awaitUntil(
-        timeout: Duration = Duration.ofSeconds(10),
-        pollInterval: Duration = Duration.ofMillis(100),
-        condition: () -> Boolean
-    ) {
-        await.atMost(timeout).pollInterval(pollInterval).until { condition() }
-    }
-
     fun <T> awaitUntilNotNull(
         timeout: Duration = Duration.ofSeconds(10),
         pollInterval: Duration = Duration.ofMillis(100),

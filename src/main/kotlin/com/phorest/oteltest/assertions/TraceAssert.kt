@@ -1,8 +1,9 @@
 package com.phorest.oteltest.assertions
 
-import com.google.protobuf.ByteString
 import com.phorest.oteltest.model.SpanNode
 import com.phorest.oteltest.model.TraceTree
+import com.phorest.oteltest.util.parentSpanIdHex
+import com.phorest.oteltest.util.spanIdHex
 import io.opentelemetry.proto.trace.v1.Span
 
 class TraceAssert private constructor(private val trace: TraceTree) {
@@ -57,8 +58,8 @@ class TraceAssert private constructor(private val trace: TraceTree) {
 class SpanInTraceAssert internal constructor(private val span: Span, private val allSpans: List<SpanNode>) {
 
     fun hasParent(parentName: String): SpanInTraceAssert = apply {
-        val parentSpanId = span.parentSpanId.toHexString()
-        val parent = allSpans.find { it.span.spanId.toHexString() == parentSpanId }
+        val parentSpanId = span.parentSpanIdHex
+        val parent = allSpans.find { it.span.spanIdHex == parentSpanId }
             ?: throw AssertionError(
                 "Expected span [${span.name}] to have a parent but parent span ID [$parentSpanId] was not found in trace"
             )
@@ -72,19 +73,10 @@ class SpanInTraceAssert internal constructor(private val span: Span, private val
     fun hasNoParent(): SpanInTraceAssert = apply {
         if (!span.parentSpanId.isEmpty) {
             throw AssertionError(
-                "Expected span [${span.name}] to have no parent but had parent span ID [${span.parentSpanId.toHexString()}]"
+                "Expected span [${span.name}] to have no parent but had parent span ID [${span.parentSpanIdHex}]"
             )
         }
     }
 }
 
-fun TraceTree.asTraceAssert(): TraceAssert = TraceAssert.assertThat(this)
-
 fun List<Span>.asTrace(): TraceAssert = TraceAssert.assertThat(TraceTree.buildFrom(this))
-
-private fun assert(condition: Boolean, message: () -> String) {
-    if (!condition) throw AssertionError(message())
-}
-
-private fun ByteString.toHexString(): String =
-    toByteArray().joinToString("") { "%02x".format(it) }

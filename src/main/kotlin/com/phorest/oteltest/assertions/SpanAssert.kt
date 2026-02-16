@@ -1,5 +1,7 @@
 package com.phorest.oteltest.assertions
 
+import com.phorest.oteltest.util.parentSpanIdHex
+import com.phorest.oteltest.util.traceIdHex
 import io.opentelemetry.proto.trace.v1.Span
 import io.opentelemetry.proto.trace.v1.Span.Event
 import io.opentelemetry.proto.trace.v1.Status
@@ -57,19 +59,19 @@ class SpanAssert private constructor(private val span: Span) {
 
     fun hasNoParent(): SpanAssert = apply {
         assert(span.parentSpanId.isEmpty) {
-            "Expected span [${span.name}] to have no parent but had parent span ID [${span.parentSpanId.toHexString()}]"
+            "Expected span [${span.name}] to have no parent but had parent span ID [${span.parentSpanIdHex}]"
         }
     }
 
     fun hasParentSpanId(expected: String): SpanAssert = apply {
-        val actual = span.parentSpanId.toHexString()
+        val actual = span.parentSpanIdHex
         assert(actual == expected) {
             "Expected parent span ID to be [$expected] but was [$actual]"
         }
     }
 
     fun hasTraceId(expected: String): SpanAssert = apply {
-        val actual = span.traceId.toHexString()
+        val actual = span.traceIdHex
         assert(actual == expected) {
             "Expected trace ID to be [$expected] but was [$actual]"
         }
@@ -128,12 +130,6 @@ class SpanAssert private constructor(private val span: Span) {
     }
 }
 
-private fun assert(condition: Boolean, message: () -> String) {
-    if (!condition) throw AssertionError(message())
-}
-
-private fun fail(message: String): Nothing = throw AssertionError(message)
-
 class EventAssert(private val event: Event) {
 
     fun hasAttribute(key: String, value: String): EventAssert = apply {
@@ -152,6 +148,3 @@ class EventAssert(private val event: Event) {
         }
     }
 }
-
-private fun com.google.protobuf.ByteString.toHexString(): String =
-    toByteArray().joinToString("") { "%02x".format(it) }

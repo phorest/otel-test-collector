@@ -1,5 +1,6 @@
 package com.phorest.oteltest.collector
 
+import com.phorest.oteltest.util.traceIdHex
 import io.opentelemetry.proto.trace.v1.Span
 import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
@@ -41,7 +42,7 @@ internal class InMemorySpanStore {
         }
 
     fun byTraceId(traceId: String): List<Span> =
-        spans.filter { it.traceId.toHexString() == traceId }
+        spans.filter { it.traceIdHex == traceId }
 
     fun awaitCount(count: Int, timeout: Duration = Duration.ofSeconds(10)): List<Span> {
         await atMost timeout until { spans.size >= count }
@@ -56,6 +57,3 @@ internal class InMemorySpanStore {
         return spans.first(predicate)
     }
 }
-
-private fun com.google.protobuf.ByteString.toHexString(): String =
-    toByteArray().joinToString("") { "%02x".format(it) }
