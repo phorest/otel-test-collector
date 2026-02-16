@@ -1,0 +1,11 @@
+feature:
+  - head-branch: ['^feature/']
+
+fix:
+  - head-branch: ['^fix/']
+
+task:
+  - head-branch: ['^task/']
+
+dependencies:
+  - head-branch: ['^dependabot/']
