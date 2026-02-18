@@ -1,0 +1,44 @@
+name-template: '$RESOLVED_VERSION'
+tag-template: '$RESOLVED_VERSION'
+categories:
+  - title: 'Features'
+    labels:
+      - 'feature'
+  - title: 'Bug Fixes'
+    labels:
+      - 'fix'
+  - title: 'Maintenance'
+    labels:
+      - 'task'
+  - title: 'DB Changes'
+    labels:
+      - 'db-change'
+  - title: 'Dependencies'
+    labels:
+      - 'dependencies'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&'
+version-resolver:
+  major:
+    labels:
+      - 'major'
+  minor:
+    labels:
+      - 'feature'
+      - 'db-change'
+  patch:
+    labels:
+      - 'fix'
+      - 'task'
+      - 'dependencies'
+  default: patch
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  ## Deployed
+    - EU: <deployment_date>
+    - US: <deployment_date>
+
+  **Deployed by:** <deploying_user>
