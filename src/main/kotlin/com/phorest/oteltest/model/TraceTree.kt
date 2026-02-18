@@ -78,16 +78,20 @@ class SpanNode(
 
 class TraceTree(
     val traceId: String,
-    val rootSpan: SpanNode,
+    val rootSpans: List<SpanNode>,
     val allSpans: List<SpanNode>
 ) {
+    val rootSpan: SpanNode get() = rootSpans.first()
+
     val spanCount: Int get() = allSpans.size
 
-    val depth: Int get() = rootSpan.depth
+    val depth: Int get() = rootSpans.maxOf { it.depth }
 
-    fun findSpan(name: String): SpanNode? = rootSpan.findDescendant(name)
+    fun findSpan(name: String): SpanNode? =
+        rootSpans.firstNotNullOfOrNull { it.findDescendant(name) }
 
-    fun findSpanById(spanId: String): SpanNode? = rootSpan.findDescendantById(spanId)
+    fun findSpanById(spanId: String): SpanNode? =
+        rootSpans.firstNotNullOfOrNull { it.findDescendantById(spanId) }
 
     fun spanNames(): List<String> = allSpans.map { it.name }
 
@@ -99,12 +103,12 @@ class TraceTree(
 
     fun toPrettyString(): String = buildString {
         appendLine("Trace (${allSpans.size} spans)")
-        append(rootSpan.toPrettyString())
+        rootSpans.forEach { append(it.toPrettyString()) }
     }
 
     override fun toString(): String = buildString {
         appendLine("Trace [$traceId] (${allSpans.size} spans, depth $depth)")
-        append(rootSpan)
+        rootSpans.forEach { append(it) }
     }
 
     companion object {
@@ -128,13 +132,14 @@ class TraceTree(
 
             val roots = spans
                 .filter { it.parentSpanId.isEmpty || spanById[it.parentSpanIdHex] == null }
+                .sortedBy { it.startTimeUnixNano }
                 .map { buildNode(it) }
 
-            check(roots.size == 1) {
-                "Expected single root span but found ${roots.size}: ${roots.map { it.name }}"
+            check(roots.isNotEmpty()) {
+                "No root span found in trace $traceId"
             }
 
-            return TraceTree(traceId, roots.single(), spans.map { SpanNode(it, emptyList()) })
+            return TraceTree(traceId, roots, spans.map { SpanNode(it, emptyList()) })
         }
     }
 }
