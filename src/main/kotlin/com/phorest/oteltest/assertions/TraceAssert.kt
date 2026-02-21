@@ -15,8 +15,8 @@ class TraceAssert private constructor(private val trace: TraceTree) {
     }
 
     fun hasRootSpan(name: String): TraceAssert = apply {
-        assert(trace.rootSpan.name == name) {
-            "Expected root span named [$name] but was [${trace.rootSpan.name}]"
+        assert(trace.rootSpans.any { it.name == name }) {
+            "Expected root span named [$name] but root spans were ${trace.rootSpans.map { it.name }}"
         }
     }
 

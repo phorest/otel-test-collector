@@ -34,12 +34,48 @@ class TraceTreeTest {
     }
 
     @Test
-    fun `buildFrom throws when multiple roots`() {
+    fun `buildFrom supports multiple roots`() {
         val spans = traceBuilder.buildTrace("root1" to null, "root2" to null)
+        val tree = TraceTree.buildFrom(spans)
 
-        assertThrows<IllegalStateException> {
-            TraceTree.buildFrom(spans)
-        }
+        assertEquals(2, tree.rootSpans.size)
+        assertEquals(listOf("root1", "root2"), tree.rootSpans.map { it.name })
+    }
+
+    @Test
+    fun `buildFrom with multiple roots links children correctly`() {
+        val spans = traceBuilder.buildTrace(
+            "root1" to null, "child1" to "root1",
+            "root2" to null, "child2" to "root2"
+        )
+        val tree = TraceTree.buildFrom(spans)
+
+        assertEquals(2, tree.rootSpans.size)
+        val r1 = tree.rootSpans.find { it.name == "root1" }!!
+        val r2 = tree.rootSpans.find { it.name == "root2" }!!
+        assertEquals(listOf("child1"), r1.children.map { it.name })
+        assertEquals(listOf("child2"), r2.children.map { it.name })
+    }
+
+    @Test
+    fun `findSpan searches across all root subtrees`() {
+        val spans = traceBuilder.buildTrace(
+            "root1" to null, "child1" to "root1",
+            "root2" to null, "child2" to "root2"
+        )
+        val tree = TraceTree.buildFrom(spans)
+
+        assertNotNull(tree.findSpan("child1"))
+        assertNotNull(tree.findSpan("child2"))
+        assertNull(tree.findSpan("missing"))
+    }
+
+    @Test
+    fun `rootSpan returns first root`() {
+        val spans = traceBuilder.buildTrace("root1" to null, "root2" to null)
+        val tree = TraceTree.buildFrom(spans)
+
+        assertEquals("root1", tree.rootSpan.name)
     }
 
     @Test

@@ -45,14 +45,14 @@ class OtlpTestCollector private constructor(
         predicate: (SpanNode) -> Boolean
     ): SpanNode {
         val span = spanStore.awaitSpan(timeout) { predicate(it.toSpanNode()) }
+        
+        val spanId = span.spanIdHex
+        if (spanId.isEmpty()) return span.toSpanNode()
+        
         val traceSpans = spanStore.byTraceId(span.traceIdHex)
         if (traceSpans.size > 1) {
-            return try {
-                val tree = TraceTree.buildFrom(traceSpans)
-                tree.findSpanById(span.spanIdHex) ?: span.toSpanNode()
-            } catch (_: IllegalStateException) {
-                span.toSpanNode()
-            }
+            val tree = TraceTree.buildFrom(traceSpans)
+            return tree.findSpanById(spanId) ?: span.toSpanNode()
         }
         return span.toSpanNode()
     }
